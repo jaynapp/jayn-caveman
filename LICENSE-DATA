@@ -1,0 +1,69 @@
+Licence for benchmark data
+==========================
+
+This file covers the **data** in this repository, not the software. Specifically
+it covers everything under `data/` and `curves/` — the raw benchmark
+observations contributed by anyone who runs the harness, and the compression
+curves fitted from them.
+
+The software in this repository is licensed under the Apache License, Version
+2.0; see LICENSE. Software licences do not cover data, which is why this split
+exists.
+
+Licence
+-------
+
+The benchmark data is licensed under the Creative Commons Attribution 4.0
+International License (CC BY 4.0).
+
+    https://creativecommons.org/licenses/by/4.0/
+
+Full legal text: https://creativecommons.org/licenses/by/4.0/legalcode
+
+You are free to share and adapt the data, including commercially, provided you
+give appropriate credit, link to the licence, and indicate whether you made
+changes.
+
+Attribution
+-----------
+
+Suggested form:
+
+    Benchmark data from the jayn project (https://github.com/jaynapp/jayn),
+    Copyright 2026 Hugo Puybareau, Maxence Rossignol and the jayn
+    contributors, licensed under CC BY 4.0.
+
+Cite the specific fitted file (for example `curves/caveman-style.json`) when quoting
+a particular figure. The numbers are per-command measurements against one build
+of one tool, not a single headline rate, and a fitted file carries the batches it was
+fitted from so a citation can be traced back to the observations behind it.
+
+Who holds the copyright
+-----------------------
+
+Contributing a batch assigns nothing. Whoever measured it keeps whatever rights
+exist in it and licenses it here under CC BY 4.0, on the same terms as the
+maintainers. The collective line above is shorthand, not a claim over anyone
+else's measurements, and it is why that line never has to be edited when someone
+contributes.
+
+Each batch names its author in its own sidecar, under `contributor`:
+
+    data/caveman/<batch>.meta.json
+
+That handle is the designation this licence asks you to credit, and it is
+enforced rather than assumed — a sidecar naming nobody is rejected on read
+instead of being fitted, because the failure mode is silent
+otherwise: the measurement would end up credited to the maintainers. Every
+fitted row lists the batches behind it, so a figure traces to its authors
+without a separate index to maintain.
+
+A note on whether any of this is copyrightable
+----------------------------------------------
+
+Possibly not, and the licence is here anyway. An observation is two token counts
+measured from a fixture this repository generated — a fact, and facts attract no
+copyright in the United States and several other jurisdictions. CC BY 4.0 is
+used because it also licenses the sui generis database right where one does
+exist, notably in the EU, and because stating the terms plainly is worth more
+than being right about which of them bite.

@@ -1,0 +1,1719 @@
+{
+  "cellVersion": 3,
+  "fittedAt": "2026-08-14T17:30:37.409Z",
+  "corpora": [
+    {
+      "id": "corpus-a",
+      "vanillaTurns": 2407
+    },
+    {
+      "id": "corpus-b",
+      "vanillaTurns": 669
+    },
+    {
+      "id": "corpus-c",
+      "vanillaTurns": 379
+    },
+    {
+      "id": "corpus-d",
+      "vanillaTurns": 835
+    },
+    {
+      "id": "corpus-e",
+      "vanillaTurns": 0
+    },
+    {
+      "id": "corpus-f",
+      "vanillaTurns": 343
+    },
+    {
+      "id": "corpus-g",
+      "vanillaTurns": 7206
+    },
+    {
+      "id": "corpus-h",
+      "vanillaTurns": 104
+    }
+  ],
+  "quantile": 0.25,
+  "cells": {
+    "en|0|prose|*": {
+      "cutoff": 6.5,
+      "support": 2625,
+      "betweenBatch": {
+        "batches": 7,
+        "cutoffs": [6, 6.5, 7.5, 7.5, 7.5, 7.5, 8],
+        "spread": 2
+      }
+    },
+    "en|0|prose|claude-fable-5": {
+      "cutoff": 6.5,
+      "support": 705,
+      "betweenBatch": {
+        "batches": 1,
+        "cutoffs": [6.5],
+        "spread": null
+      }
+    },
+    "en|0|prose|claude-opus-4-7": {
+      "cutoff": 6,
+      "support": 207,
+      "betweenBatch": {
+        "batches": 1,
+        "cutoffs": [6],
+        "spread": null
+      }
+    },
+    "en|0|prose|claude-opus-4-8": {
+      "cutoff": 6.5,
+      "support": 978,
+      "betweenBatch": {
+        "batches": 3,
+        "cutoffs": [6, 7.5, 7.5],
+        "spread": 1.5
+      }
+    },
+    "en|0|prose|claude-opus-5": {
+      "cutoff": 6.5,
+      "support": 407,
+      "betweenBatch": {
+        "batches": 3,
+        "cutoffs": [6.5, 7, 7.5],
+        "spread": 1
+      }
+    },
+    "en|0|prose|claude-sonnet-4-6": {
+      "cutoff": 7.5,
+      "support": 25,
+      "betweenBatch": {
+        "batches": 1,
+        "cutoffs": [7.5],
+        "spread": null
+      }
+    },
+    "en|0|prose|claude-sonnet-5": {
+      "cutoff": 6.5,
+      "support": 298,
+      "betweenBatch": {
+        "batches": 2,
+        "cutoffs": [6, 8],
+        "spread": 2
+      }
+    },
+    "en|1|prose|*": {
+      "cutoff": 9.5,
+      "support": 2875,
+      "betweenBatch": {
+        "batches": 6,
+        "cutoffs": [8.5, 9.5, 9.5, 9.5, 9.5, 11.5],
+        "spread": 3
+      }
+    },
+    "en|1|prose|claude-fable-5": {
+      "cutoff": 10,
+      "support": 687,
+      "betweenBatch": {
+        "batches": 1,
+        "cutoffs": [10],
+        "spread": null
+      }
+    },
+    "en|1|prose|claude-opus-4-7": {
+      "cutoff": 8.5,
+      "support": 204,
+      "betweenBatch": {
+        "batches": 1,
+        "cutoffs": [8.5],
+        "spread": null
+      }
+    },
+    "en|1|prose|claude-opus-4-8": {
+      "cutoff": 9.5,
+      "support": 1317,
+      "betweenBatch": {
+        "batches": 3,
+        "cutoffs": [9.5, 9.5, 9.5],
+        "spread": 0
+      }
+    },
+    "en|1|prose|claude-opus-5": {
+      "cutoff": 9.5,
+      "support": 375,
+      "betweenBatch": {
+        "batches": 3,
+        "cutoffs": [9, 9.5, 9.67],
+        "spread": 0.6699999999999999
+      }
+    },
+    "en|1|prose|claude-sonnet-5": {
+      "cutoff": 10.5,
+      "support": 275,
+      "betweenBatch": {
+        "batches": 2,
+        "cutoffs": [10, 11.5],
+        "spread": 1.5
+      }
+    },
+    "en|2|list|*": {
+      "cutoff": 7.33,
+      "support": 61,
+      "betweenBatch": {
+        "batches": 2,
+        "cutoffs": [7, 7.5],
+        "spread": 0.5
+      }
+    },
+    "en|2|list|claude-opus-4-7": {
+      "cutoff": 7.5,
+      "support": 23,
+      "betweenBatch": {
+        "batches": 1,
+        "cutoffs": [7.5],
+        "spread": null
+      }
+    },
+    "en|2|prose|*": {
+      "cutoff": 13.33,
+      "support": 1253,
+      "betweenBatch": {
+        "batches": 4,
+        "cutoffs": [9.2, 12.6, 13.67, 17],
+        "spread": 7.800000000000001
+      }
+    },
+    "en|2|prose|claude-fable-5": {
+      "cutoff": 17,
+      "support": 287,
+      "betweenBatch": {
+        "batches": 1,
+        "cutoffs": [17],
+        "spread": null
+      }
+    },
+    "en|2|prose|claude-opus-4-7": {
+      "cutoff": 9.2,
+      "support": 58,
+      "betweenBatch": {
+        "batches": 1,
+        "cutoffs": [9.2],
+        "spread": null
+      }
+    },
+    "en|2|prose|claude-opus-4-8": {
+      "cutoff": 13,
+      "support": 690,
+      "betweenBatch": {
+        "batches": 2,
+        "cutoffs": [12.6, 13],
+        "spread": 0.40000000000000036
+      }
+    },
+    "en|2|prose|claude-opus-5": {
+      "cutoff": 12,
+      "support": 70,
+      "betweenBatch": {
+        "batches": 1,
+        "cutoffs": [12],
+        "spread": null
+      }
+    },
+    "en|2|prose|claude-sonnet-5": {
+      "cutoff": 16.67,
+      "support": 138,
+      "betweenBatch": {
+        "batches": 2,
+        "cutoffs": [16.33, 17],
+        "spread": 0.6700000000000017
+      }
+    },
+    "en|3|list|*": {
+      "cutoff": 12.17,
+      "support": 267,
+      "betweenBatch": {
+        "batches": 2,
+        "cutoffs": [10.2, 12.86],
+        "spread": 2.66
+      }
+    },
+    "en|3|list|claude-fable-5": {
+      "cutoff": 12,
+      "support": 46,
+      "betweenBatch": {
+        "batches": 1,
+        "cutoffs": [12],
+        "spread": null
+      }
+    },
+    "en|3|list|claude-opus-4-7": {
+      "cutoff": 10.2,
+      "support": 59,
+      "betweenBatch": {
+        "batches": 1,
+        "cutoffs": [10.2],
+        "spread": null
+      }
+    },
+    "en|3|list|claude-opus-4-8": {
+      "cutoff": 12.5,
+      "support": 106,
+      "betweenBatch": {
+        "batches": 1,
+        "cutoffs": [12.5],
+        "spread": null
+      }
+    },
+    "en|3|list|claude-sonnet-5": {
+      "cutoff": 14,
+      "support": 45,
+      "betweenBatch": {
+        "batches": 1,
+        "cutoffs": [15],
+        "spread": null
+      }
+    },
+    "en|3|prose|*": {
+      "cutoff": 16.8,
+      "support": 534,
+      "betweenBatch": {
+        "batches": 2,
+        "cutoffs": [17, 21.8],
+        "spread": 4.800000000000001
+      }
+    },
+    "en|3|prose|claude-fable-5": {
+      "cutoff": 20.33,
+      "support": 125,
+      "betweenBatch": {
+        "batches": 1,
+        "cutoffs": [20.33],
+        "spread": null
+      }
+    },
+    "en|3|prose|claude-opus-4-8": {
+      "cutoff": 16,
+      "support": 279,
+      "betweenBatch": {
+        "batches": 1,
+        "cutoffs": [16],
+        "spread": null
+      }
+    },
+    "en|3|prose|claude-opus-5": {
+      "cutoff": 13.67,
+      "support": 23,
+      "betweenBatch": {
+        "batches": 0,
+        "cutoffs": [],
+        "spread": null
+      }
+    },
+    "en|3|prose|claude-sonnet-5": {
+      "cutoff": 20.2,
+      "support": 89,
+      "betweenBatch": {
+        "batches": 2,
+        "cutoffs": [18.5, 21.8],
+        "spread": 3.3000000000000007
+      }
+    },
+    "en|4|list|*": {
+      "cutoff": 16.38,
+      "support": 852,
+      "betweenBatch": {
+        "batches": 3,
+        "cutoffs": [12.28, 17.25, 18],
+        "spread": 5.720000000000001
+      }
+    },
+    "en|4|list|claude-fable-5": {
+      "cutoff": 19.33,
+      "support": 330,
+      "betweenBatch": {
+        "batches": 1,
+        "cutoffs": [19.33],
+        "spread": null
+      }
+    },
+    "en|4|list|claude-opus-4-7": {
+      "cutoff": 12.28,
+      "support": 83,
+      "betweenBatch": {
+        "batches": 1,
+        "cutoffs": [12.28],
+        "spread": null
+      }
+    },
+    "en|4|list|claude-opus-4-8": {
+      "cutoff": 16,
+      "support": 326,
+      "betweenBatch": {
+        "batches": 1,
+        "cutoffs": [16],
+        "spread": null
+      }
+    },
+    "en|4|list|claude-opus-5": {
+      "cutoff": 15.28,
+      "support": 69,
+      "betweenBatch": {
+        "batches": 1,
+        "cutoffs": [15.04],
+        "spread": null
+      }
+    },
+    "en|4|list|claude-sonnet-5": {
+      "cutoff": 19.38,
+      "support": 43,
+      "betweenBatch": {
+        "batches": 2,
+        "cutoffs": [18, 20],
+        "spread": 2
+      }
+    },
+    "en|4|prose|*": {
+      "cutoff": 18,
+      "support": 351,
+      "betweenBatch": {
+        "batches": 1,
+        "cutoffs": [18.73],
+        "spread": null
+      }
+    },
+    "en|4|prose|claude-fable-5": {
+      "cutoff": 21.13,
+      "support": 90,
+      "betweenBatch": {
+        "batches": 1,
+        "cutoffs": [21.13],
+        "spread": null
+      }
+    },
+    "en|4|prose|claude-opus-4-8": {
+      "cutoff": 18,
+      "support": 135,
+      "betweenBatch": {
+        "batches": 1,
+        "cutoffs": [18.11],
+        "spread": null
+      }
+    },
+    "en|4|prose|claude-opus-5": {
+      "cutoff": 14.67,
+      "support": 63,
+      "betweenBatch": {
+        "batches": 1,
+        "cutoffs": [15.21],
+        "spread": null
+      }
+    },
+    "en|4|prose|claude-sonnet-5": {
+      "cutoff": 22.75,
+      "support": 48,
+      "betweenBatch": {
+        "batches": 1,
+        "cutoffs": [25.43],
+        "spread": null
+      }
+    },
+    "en|5|list|*": {
+      "cutoff": 16.65,
+      "support": 43,
+      "betweenBatch": {
+        "batches": 1,
+        "cutoffs": [18],
+        "spread": null
+      }
+    },
+    "en|5|list|claude-opus-4-8": {
+      "cutoff": 16.84,
+      "support": 21,
+      "betweenBatch": {
+        "batches": 1,
+        "cutoffs": [16.84],
+        "spread": null
+      }
+    },
+    "fr|0|prose|*": {
+      "cutoff": 6.5,
+      "support": 1005,
+      "betweenBatch": {
+        "batches": 3,
+        "cutoffs": [6.5, 6.5, 7.5],
+        "spread": 1
+      }
+    },
+    "fr|0|prose|claude-opus-4-8": {
+      "cutoff": 6.5,
+      "support": 337,
+      "betweenBatch": {
+        "batches": 2,
+        "cutoffs": [6.5, 6.5],
+        "spread": 0
+      }
+    },
+    "fr|0|prose|claude-opus-5": {
+      "cutoff": 7,
+      "support": 614,
+      "betweenBatch": {
+        "batches": 2,
+        "cutoffs": [7, 7.5],
+        "spread": 0.5
+      }
+    },
+    "fr|0|prose|claude-sonnet-4-6": {
+      "cutoff": 7,
+      "support": 47,
+      "betweenBatch": {
+        "batches": 1,
+        "cutoffs": [7],
+        "spread": null
+      }
+    },
+    "fr|1|prose|*": {
+      "cutoff": 9.33,
+      "support": 1062,
+      "betweenBatch": {
+        "batches": 3,
+        "cutoffs": [9, 9, 10],
+        "spread": 1
+      }
+    },
+    "fr|1|prose|claude-opus-4-8": {
+      "cutoff": 9.33,
+      "support": 542,
+      "betweenBatch": {
+        "batches": 3,
+        "cutoffs": [9, 9.5, 10],
+        "spread": 1
+      }
+    },
+    "fr|1|prose|claude-opus-5": {
+      "cutoff": 9.33,
+      "support": 487,
+      "betweenBatch": {
+        "batches": 2,
+        "cutoffs": [9, 9.5],
+        "spread": 0.5
+      }
+    },
+    "fr|1|prose|claude-sonnet-4-6": {
+      "cutoff": 7.33,
+      "support": 23,
+      "betweenBatch": {
+        "batches": 1,
+        "cutoffs": [7.33],
+        "spread": null
+      }
+    },
+    "fr|2|list|*": {
+      "cutoff": 8,
+      "support": 23,
+      "betweenBatch": {
+        "batches": 0,
+        "cutoffs": [],
+        "spread": null
+      }
+    },
+    "fr|2|list|claude-opus-4-8": {
+      "cutoff": 8.67,
+      "support": 20,
+      "betweenBatch": {
+        "batches": 0,
+        "cutoffs": [],
+        "spread": null
+      }
+    },
+    "fr|2|prose|*": {
+      "cutoff": 12.25,
+      "support": 327,
+      "betweenBatch": {
+        "batches": 3,
+        "cutoffs": [12, 12.33, 12.5],
+        "spread": 0.5
+      }
+    },
+    "fr|2|prose|claude-opus-4-8": {
+      "cutoff": 12.25,
+      "support": 234,
+      "betweenBatch": {
+        "batches": 3,
+        "cutoffs": [12, 12.33, 12.5],
+        "spread": 0.5
+      }
+    },
+    "fr|2|prose|claude-opus-5": {
+      "cutoff": 12.2,
+      "support": 75,
+      "betweenBatch": {
+        "batches": 1,
+        "cutoffs": [12],
+        "spread": null
+      }
+    },
+    "fr|3|list|*": {
+      "cutoff": 10,
+      "support": 130,
+      "betweenBatch": {
+        "batches": 1,
+        "cutoffs": [10],
+        "spread": null
+      }
+    },
+    "fr|3|list|claude-opus-4-8": {
+      "cutoff": 10.6,
+      "support": 108,
+      "betweenBatch": {
+        "batches": 1,
+        "cutoffs": [10.25],
+        "spread": null
+      }
+    },
+    "fr|3|prose|*": {
+      "cutoff": 14.71,
+      "support": 65,
+      "betweenBatch": {
+        "batches": 2,
+        "cutoffs": [14, 14.5],
+        "spread": 0.5
+      }
+    },
+    "fr|3|prose|claude-opus-4-8": {
+      "cutoff": 14.6,
+      "support": 50,
+      "betweenBatch": {
+        "batches": 1,
+        "cutoffs": [14],
+        "spread": null
+      }
+    },
+    "fr|4|list|*": {
+      "cutoff": 14.57,
+      "support": 219,
+      "betweenBatch": {
+        "batches": 3,
+        "cutoffs": [13.1, 15.8, 16.18],
+        "spread": 3.08
+      }
+    },
+    "fr|4|list|claude-opus-4-8": {
+      "cutoff": 13.24,
+      "support": 124,
+      "betweenBatch": {
+        "batches": 3,
+        "cutoffs": [12.43, 14, 15.08],
+        "spread": 2.6500000000000004
+      }
+    },
+    "fr|4|list|claude-opus-5": {
+      "cutoff": 16.4,
+      "support": 82,
+      "betweenBatch": {
+        "batches": 2,
+        "cutoffs": [15.57, 17.19],
+        "spread": 1.620000000000001
+      }
+    },
+    "fr|4|prose|*": {
+      "cutoff": 16.46,
+      "support": 129,
+      "betweenBatch": {
+        "batches": 3,
+        "cutoffs": [16.17, 16.38, 17.42],
+        "spread": 1.25
+      }
+    },
+    "fr|4|prose|claude-opus-4-8": {
+      "cutoff": 15.11,
+      "support": 35,
+      "betweenBatch": {
+        "batches": 1,
+        "cutoffs": [16.17],
+        "spread": null
+      }
+    },
+    "fr|4|prose|claude-opus-5": {
+      "cutoff": 17.45,
+      "support": 89,
+      "betweenBatch": {
+        "batches": 2,
+        "cutoffs": [17.14, 18],
+        "spread": 0.8599999999999994
+      }
+    },
+    "fr|5|list|*": {
+      "cutoff": 17.73,
+      "support": 49,
+      "betweenBatch": {
+        "batches": 1,
+        "cutoffs": [17.07],
+        "spread": null
+      }
+    },
+    "fr|5|list|claude-opus-5": {
+      "cutoff": 17.73,
+      "support": 39,
+      "betweenBatch": {
+        "batches": 1,
+        "cutoffs": [17.73],
+        "spread": null
+      }
+    },
+    "fr|5|prose|*": {
+      "cutoff": 17.54,
+      "support": 38,
+      "betweenBatch": {
+        "batches": 1,
+        "cutoffs": [17.5],
+        "spread": null
+      }
+    },
+    "fr|5|prose|claude-opus-5": {
+      "cutoff": 17.5,
+      "support": 35,
+      "betweenBatch": {
+        "batches": 1,
+        "cutoffs": [17.5],
+        "spread": null
+      }
+    }
+  },
+  "pFire": {
+    "level": {
+      "en": {
+        "a": 0.8457053434718248,
+        "support": 883,
+        "contributors": 3
+      },
+      "fr": {
+        "a": 0.781113459368464,
+        "support": 305,
+        "contributors": 2
+      },
+      "*": {
+        "a": 0.839283688388057,
+        "support": 1188,
+        "contributors": 3
+      }
+    },
+    "c": 1.7275594997944221,
+    "cCI": [1.2548413552228734, 2.3648978855401244],
+    "b": -0.5795603992103622,
+    "bCI": [-0.9542832355076594, -0.29187416774941743],
+    "compositionRange": [0.39460382892884327, 0.47515819849832225],
+    "fittedOn": {
+      "model": "claude-opus-5",
+      "onTurns": 1188,
+      "offTurns": 2472,
+      "contributors": 3,
+      "dropped": 12
+    },
+    "binDisagreement": {
+      "cell": "en|mid|2",
+      "measured": 0.5333333333333333,
+      "formula": 0.32997669553776393,
+      "gap": 0.2033566377955694
+    }
+  },
+  "floors": [
+    {
+      "bin": 0,
+      "from": 0,
+      "to": 5,
+      "language": "en",
+      "position": "last",
+      "model": "*",
+      "rate": 0.17765042979942694,
+      "support": 349
+    },
+    {
+      "bin": 0,
+      "from": 0,
+      "to": 5,
+      "language": "en",
+      "position": "last",
+      "model": "claude-fable-5",
+      "rate": 0.16666666666666666,
+      "support": 108
+    },
+    {
+      "bin": 0,
+      "from": 0,
+      "to": 5,
+      "language": "en",
+      "position": "last",
+      "model": "claude-haiku-4-5",
+      "rate": 0.20833333333333334,
+      "support": 24
+    },
+    {
+      "bin": 0,
+      "from": 0,
+      "to": 5,
+      "language": "en",
+      "position": "last",
+      "model": "claude-opus-4-8",
+      "rate": 0.1951219512195122,
+      "support": 123
+    },
+    {
+      "bin": 0,
+      "from": 0,
+      "to": 5,
+      "language": "en",
+      "position": "last",
+      "model": "claude-sonnet-5",
+      "rate": 0.16470588235294117,
+      "support": 85
+    },
+    {
+      "bin": 0,
+      "from": 0,
+      "to": 5,
+      "language": "en",
+      "position": "mid",
+      "model": "*",
+      "rate": 0.19295774647887323,
+      "support": 710
+    },
+    {
+      "bin": 0,
+      "from": 0,
+      "to": 5,
+      "language": "en",
+      "position": "mid",
+      "model": "claude-fable-5",
+      "rate": 0.13145539906103287,
+      "support": 213
+    },
+    {
+      "bin": 0,
+      "from": 0,
+      "to": 5,
+      "language": "en",
+      "position": "mid",
+      "model": "claude-opus-4-7",
+      "rate": 0.16666666666666666,
+      "support": 18
+    },
+    {
+      "bin": 0,
+      "from": 0,
+      "to": 5,
+      "language": "en",
+      "position": "mid",
+      "model": "claude-opus-4-8",
+      "rate": 0.23782234957020057,
+      "support": 349
+    },
+    {
+      "bin": 0,
+      "from": 0,
+      "to": 5,
+      "language": "en",
+      "position": "mid",
+      "model": "claude-opus-5",
+      "rate": 0.19696969696969696,
+      "support": 66
+    },
+    {
+      "bin": 0,
+      "from": 0,
+      "to": 5,
+      "language": "en",
+      "position": "mid",
+      "model": "claude-sonnet-5",
+      "rate": 0.1206896551724138,
+      "support": 58
+    },
+    {
+      "bin": 0,
+      "from": 0,
+      "to": 5,
+      "language": "fr",
+      "position": "last",
+      "model": "*",
+      "rate": 0.4,
+      "support": 10
+    },
+    {
+      "bin": 0,
+      "from": 0,
+      "to": 5,
+      "language": "fr",
+      "position": "mid",
+      "model": "*",
+      "rate": 0.11428571428571428,
+      "support": 35
+    },
+    {
+      "bin": 0,
+      "from": 0,
+      "to": 5,
+      "language": "fr",
+      "position": "mid",
+      "model": "claude-opus-4-8",
+      "rate": 0.21052631578947367,
+      "support": 19
+    },
+    {
+      "bin": 0,
+      "from": 0,
+      "to": 5,
+      "language": "fr",
+      "position": "mid",
+      "model": "claude-opus-5",
+      "rate": 0,
+      "support": 10
+    },
+    {
+      "bin": 1,
+      "from": 5,
+      "to": 10,
+      "language": "en",
+      "position": "last",
+      "model": "*",
+      "rate": 0.21818181818181817,
+      "support": 165
+    },
+    {
+      "bin": 1,
+      "from": 5,
+      "to": 10,
+      "language": "en",
+      "position": "last",
+      "model": "claude-fable-5",
+      "rate": 0.0847457627118644,
+      "support": 59
+    },
+    {
+      "bin": 1,
+      "from": 5,
+      "to": 10,
+      "language": "en",
+      "position": "last",
+      "model": "claude-opus-4-8",
+      "rate": 0.2987012987012987,
+      "support": 77
+    },
+    {
+      "bin": 1,
+      "from": 5,
+      "to": 10,
+      "language": "en",
+      "position": "last",
+      "model": "claude-opus-5",
+      "rate": 0.6363636363636364,
+      "support": 11
+    },
+    {
+      "bin": 1,
+      "from": 5,
+      "to": 10,
+      "language": "en",
+      "position": "last",
+      "model": "claude-sonnet-5",
+      "rate": 0,
+      "support": 15
+    },
+    {
+      "bin": 1,
+      "from": 5,
+      "to": 10,
+      "language": "en",
+      "position": "mid",
+      "model": "*",
+      "rate": 0.2372549019607843,
+      "support": 510
+    },
+    {
+      "bin": 1,
+      "from": 5,
+      "to": 10,
+      "language": "en",
+      "position": "mid",
+      "model": "claude-fable-5",
+      "rate": 0.2711864406779661,
+      "support": 118
+    },
+    {
+      "bin": 1,
+      "from": 5,
+      "to": 10,
+      "language": "en",
+      "position": "mid",
+      "model": "claude-opus-4-7",
+      "rate": 0.08333333333333333,
+      "support": 24
+    },
+    {
+      "bin": 1,
+      "from": 5,
+      "to": 10,
+      "language": "en",
+      "position": "mid",
+      "model": "claude-opus-4-8",
+      "rate": 0.20689655172413793,
+      "support": 290
+    },
+    {
+      "bin": 1,
+      "from": 5,
+      "to": 10,
+      "language": "en",
+      "position": "mid",
+      "model": "claude-opus-5",
+      "rate": 0.2916666666666667,
+      "support": 24
+    },
+    {
+      "bin": 1,
+      "from": 5,
+      "to": 10,
+      "language": "en",
+      "position": "mid",
+      "model": "claude-sonnet-5",
+      "rate": 0.3695652173913043,
+      "support": 46
+    },
+    {
+      "bin": 1,
+      "from": 5,
+      "to": 10,
+      "language": "fr",
+      "position": "last",
+      "model": "*",
+      "rate": 0.25,
+      "support": 12
+    },
+    {
+      "bin": 1,
+      "from": 5,
+      "to": 10,
+      "language": "fr",
+      "position": "mid",
+      "model": "*",
+      "rate": 0.19230769230769232,
+      "support": 26
+    },
+    {
+      "bin": 1,
+      "from": 5,
+      "to": 10,
+      "language": "fr",
+      "position": "mid",
+      "model": "claude-opus-4-8",
+      "rate": 0.16666666666666666,
+      "support": 18
+    },
+    {
+      "bin": 2,
+      "from": 10,
+      "to": 20,
+      "language": "en",
+      "position": "last",
+      "model": "*",
+      "rate": 0.26744186046511625,
+      "support": 172
+    },
+    {
+      "bin": 2,
+      "from": 10,
+      "to": 20,
+      "language": "en",
+      "position": "last",
+      "model": "claude-fable-5",
+      "rate": 0.25757575757575757,
+      "support": 66
+    },
+    {
+      "bin": 2,
+      "from": 10,
+      "to": 20,
+      "language": "en",
+      "position": "last",
+      "model": "claude-opus-4-8",
+      "rate": 0.2641509433962264,
+      "support": 53
+    },
+    {
+      "bin": 2,
+      "from": 10,
+      "to": 20,
+      "language": "en",
+      "position": "last",
+      "model": "claude-opus-5",
+      "rate": 0.2,
+      "support": 15
+    },
+    {
+      "bin": 2,
+      "from": 10,
+      "to": 20,
+      "language": "en",
+      "position": "last",
+      "model": "claude-sonnet-5",
+      "rate": 0.28125,
+      "support": 32
+    },
+    {
+      "bin": 2,
+      "from": 10,
+      "to": 20,
+      "language": "en",
+      "position": "mid",
+      "model": "*",
+      "rate": 0.26005361930294907,
+      "support": 746
+    },
+    {
+      "bin": 2,
+      "from": 10,
+      "to": 20,
+      "language": "en",
+      "position": "mid",
+      "model": "claude-fable-5",
+      "rate": 0.19254658385093168,
+      "support": 161
+    },
+    {
+      "bin": 2,
+      "from": 10,
+      "to": 20,
+      "language": "en",
+      "position": "mid",
+      "model": "claude-opus-4-7",
+      "rate": 0.08333333333333333,
+      "support": 36
+    },
+    {
+      "bin": 2,
+      "from": 10,
+      "to": 20,
+      "language": "en",
+      "position": "mid",
+      "model": "claude-opus-4-8",
+      "rate": 0.28883495145631066,
+      "support": 412
+    },
+    {
+      "bin": 2,
+      "from": 10,
+      "to": 20,
+      "language": "en",
+      "position": "mid",
+      "model": "claude-opus-5",
+      "rate": 0.16666666666666666,
+      "support": 60
+    },
+    {
+      "bin": 2,
+      "from": 10,
+      "to": 20,
+      "language": "en",
+      "position": "mid",
+      "model": "claude-sonnet-5",
+      "rate": 0.38235294117647056,
+      "support": 68
+    },
+    {
+      "bin": 2,
+      "from": 10,
+      "to": 20,
+      "language": "fr",
+      "position": "last",
+      "model": "*",
+      "rate": 0.17647058823529413,
+      "support": 17
+    },
+    {
+      "bin": 2,
+      "from": 10,
+      "to": 20,
+      "language": "fr",
+      "position": "last",
+      "model": "claude-opus-5",
+      "rate": 0.2,
+      "support": 10
+    },
+    {
+      "bin": 2,
+      "from": 10,
+      "to": 20,
+      "language": "fr",
+      "position": "mid",
+      "model": "*",
+      "rate": 0.2765957446808511,
+      "support": 47
+    },
+    {
+      "bin": 2,
+      "from": 10,
+      "to": 20,
+      "language": "fr",
+      "position": "mid",
+      "model": "claude-opus-4-8",
+      "rate": 0.32142857142857145,
+      "support": 28
+    },
+    {
+      "bin": 2,
+      "from": 10,
+      "to": 20,
+      "language": "fr",
+      "position": "mid",
+      "model": "claude-opus-5",
+      "rate": 0.1875,
+      "support": 16
+    },
+    {
+      "bin": 3,
+      "from": 20,
+      "to": 40,
+      "language": "en",
+      "position": "last",
+      "model": "*",
+      "rate": 0.270042194092827,
+      "support": 237
+    },
+    {
+      "bin": 3,
+      "from": 20,
+      "to": 40,
+      "language": "en",
+      "position": "last",
+      "model": "claude-fable-5",
+      "rate": 0.3,
+      "support": 80
+    },
+    {
+      "bin": 3,
+      "from": 20,
+      "to": 40,
+      "language": "en",
+      "position": "last",
+      "model": "claude-opus-4-8",
+      "rate": 0.2564102564102564,
+      "support": 78
+    },
+    {
+      "bin": 3,
+      "from": 20,
+      "to": 40,
+      "language": "en",
+      "position": "last",
+      "model": "claude-opus-5",
+      "rate": 0.15789473684210525,
+      "support": 19
+    },
+    {
+      "bin": 3,
+      "from": 20,
+      "to": 40,
+      "language": "en",
+      "position": "last",
+      "model": "claude-sonnet-5",
+      "rate": 0.29411764705882354,
+      "support": 51
+    },
+    {
+      "bin": 3,
+      "from": 20,
+      "to": 40,
+      "language": "en",
+      "position": "mid",
+      "model": "*",
+      "rate": 0.2380038387715931,
+      "support": 1042
+    },
+    {
+      "bin": 3,
+      "from": 20,
+      "to": 40,
+      "language": "en",
+      "position": "mid",
+      "model": "claude-fable-5",
+      "rate": 0.26495726495726496,
+      "support": 234
+    },
+    {
+      "bin": 3,
+      "from": 20,
+      "to": 40,
+      "language": "en",
+      "position": "mid",
+      "model": "claude-opus-4-7",
+      "rate": 0.15625,
+      "support": 64
+    },
+    {
+      "bin": 3,
+      "from": 20,
+      "to": 40,
+      "language": "en",
+      "position": "mid",
+      "model": "claude-opus-4-8",
+      "rate": 0.2509505703422053,
+      "support": 526
+    },
+    {
+      "bin": 3,
+      "from": 20,
+      "to": 40,
+      "language": "en",
+      "position": "mid",
+      "model": "claude-opus-5",
+      "rate": 0.19130434782608696,
+      "support": 115
+    },
+    {
+      "bin": 3,
+      "from": 20,
+      "to": 40,
+      "language": "en",
+      "position": "mid",
+      "model": "claude-sonnet-5",
+      "rate": 0.20430107526881722,
+      "support": 93
+    },
+    {
+      "bin": 3,
+      "from": 20,
+      "to": 40,
+      "language": "fr",
+      "position": "last",
+      "model": "*",
+      "rate": 0.25,
+      "support": 32
+    },
+    {
+      "bin": 3,
+      "from": 20,
+      "to": 40,
+      "language": "fr",
+      "position": "last",
+      "model": "claude-opus-5",
+      "rate": 0.2631578947368421,
+      "support": 19
+    },
+    {
+      "bin": 3,
+      "from": 20,
+      "to": 40,
+      "language": "fr",
+      "position": "mid",
+      "model": "*",
+      "rate": 0.25555555555555554,
+      "support": 90
+    },
+    {
+      "bin": 3,
+      "from": 20,
+      "to": 40,
+      "language": "fr",
+      "position": "mid",
+      "model": "claude-opus-4-8",
+      "rate": 0.2608695652173913,
+      "support": 46
+    },
+    {
+      "bin": 3,
+      "from": 20,
+      "to": 40,
+      "language": "fr",
+      "position": "mid",
+      "model": "claude-opus-5",
+      "rate": 0.2682926829268293,
+      "support": 41
+    },
+    {
+      "bin": 4,
+      "from": 40,
+      "to": 80,
+      "language": "en",
+      "position": "last",
+      "model": "*",
+      "rate": 0.23867069486404835,
+      "support": 331
+    },
+    {
+      "bin": 4,
+      "from": 40,
+      "to": 80,
+      "language": "en",
+      "position": "last",
+      "model": "claude-fable-5",
+      "rate": 0.22962962962962963,
+      "support": 135
+    },
+    {
+      "bin": 4,
+      "from": 40,
+      "to": 80,
+      "language": "en",
+      "position": "last",
+      "model": "claude-opus-4-7",
+      "rate": 0.35,
+      "support": 20
+    },
+    {
+      "bin": 4,
+      "from": 40,
+      "to": 80,
+      "language": "en",
+      "position": "last",
+      "model": "claude-opus-4-8",
+      "rate": 0.23333333333333334,
+      "support": 90
+    },
+    {
+      "bin": 4,
+      "from": 40,
+      "to": 80,
+      "language": "en",
+      "position": "last",
+      "model": "claude-opus-5",
+      "rate": 0.14705882352941177,
+      "support": 34
+    },
+    {
+      "bin": 4,
+      "from": 40,
+      "to": 80,
+      "language": "en",
+      "position": "last",
+      "model": "claude-sonnet-5",
+      "rate": 0.2916666666666667,
+      "support": 48
+    },
+    {
+      "bin": 4,
+      "from": 40,
+      "to": 80,
+      "language": "en",
+      "position": "mid",
+      "model": "*",
+      "rate": 0.2609053497942387,
+      "support": 1215
+    },
+    {
+      "bin": 4,
+      "from": 40,
+      "to": 80,
+      "language": "en",
+      "position": "mid",
+      "model": "claude-fable-5",
+      "rate": 0.2909698996655518,
+      "support": 299
+    },
+    {
+      "bin": 4,
+      "from": 40,
+      "to": 80,
+      "language": "en",
+      "position": "mid",
+      "model": "claude-opus-4-7",
+      "rate": 0.25862068965517243,
+      "support": 58
+    },
+    {
+      "bin": 4,
+      "from": 40,
+      "to": 80,
+      "language": "en",
+      "position": "mid",
+      "model": "claude-opus-4-8",
+      "rate": 0.25476603119584057,
+      "support": 577
+    },
+    {
+      "bin": 4,
+      "from": 40,
+      "to": 80,
+      "language": "en",
+      "position": "mid",
+      "model": "claude-opus-5",
+      "rate": 0.21578947368421053,
+      "support": 190
+    },
+    {
+      "bin": 4,
+      "from": 40,
+      "to": 80,
+      "language": "en",
+      "position": "mid",
+      "model": "claude-sonnet-5",
+      "rate": 0.2891566265060241,
+      "support": 83
+    },
+    {
+      "bin": 4,
+      "from": 40,
+      "to": 80,
+      "language": "fr",
+      "position": "last",
+      "model": "*",
+      "rate": 0.16326530612244897,
+      "support": 49
+    },
+    {
+      "bin": 4,
+      "from": 40,
+      "to": 80,
+      "language": "fr",
+      "position": "last",
+      "model": "claude-opus-4-8",
+      "rate": 0.2,
+      "support": 20
+    },
+    {
+      "bin": 4,
+      "from": 40,
+      "to": 80,
+      "language": "fr",
+      "position": "last",
+      "model": "claude-opus-5",
+      "rate": 0.15,
+      "support": 20
+    },
+    {
+      "bin": 4,
+      "from": 40,
+      "to": 80,
+      "language": "fr",
+      "position": "mid",
+      "model": "*",
+      "rate": 0.20952380952380953,
+      "support": 210
+    },
+    {
+      "bin": 4,
+      "from": 40,
+      "to": 80,
+      "language": "fr",
+      "position": "mid",
+      "model": "claude-fable-5",
+      "rate": 0.09090909090909091,
+      "support": 11
+    },
+    {
+      "bin": 4,
+      "from": 40,
+      "to": 80,
+      "language": "fr",
+      "position": "mid",
+      "model": "claude-opus-4-8",
+      "rate": 0.22,
+      "support": 100
+    },
+    {
+      "bin": 4,
+      "from": 40,
+      "to": 80,
+      "language": "fr",
+      "position": "mid",
+      "model": "claude-opus-5",
+      "rate": 0.20833333333333334,
+      "support": 96
+    },
+    {
+      "bin": 5,
+      "from": 80,
+      "to": null,
+      "language": "en",
+      "position": "last",
+      "model": "*",
+      "rate": 0.2505030181086519,
+      "support": 994
+    },
+    {
+      "bin": 5,
+      "from": 80,
+      "to": null,
+      "language": "en",
+      "position": "last",
+      "model": "claude-fable-5",
+      "rate": 0.25485436893203883,
+      "support": 412
+    },
+    {
+      "bin": 5,
+      "from": 80,
+      "to": null,
+      "language": "en",
+      "position": "last",
+      "model": "claude-opus-4-7",
+      "rate": 0.2971698113207547,
+      "support": 212
+    },
+    {
+      "bin": 5,
+      "from": 80,
+      "to": null,
+      "language": "en",
+      "position": "last",
+      "model": "claude-opus-4-8",
+      "rate": 0.21226415094339623,
+      "support": 212
+    },
+    {
+      "bin": 5,
+      "from": 80,
+      "to": null,
+      "language": "en",
+      "position": "last",
+      "model": "claude-opus-5",
+      "rate": 0.234375,
+      "support": 64
+    },
+    {
+      "bin": 5,
+      "from": 80,
+      "to": null,
+      "language": "en",
+      "position": "last",
+      "model": "claude-sonnet-5",
+      "rate": 0.22340425531914893,
+      "support": 94
+    },
+    {
+      "bin": 5,
+      "from": 80,
+      "to": null,
+      "language": "en",
+      "position": "mid",
+      "model": "*",
+      "rate": 0.2301255230125523,
+      "support": 2390
+    },
+    {
+      "bin": 5,
+      "from": 80,
+      "to": null,
+      "language": "en",
+      "position": "mid",
+      "model": "claude-fable-5",
+      "rate": 0.2681704260651629,
+      "support": 399
+    },
+    {
+      "bin": 5,
+      "from": 80,
+      "to": null,
+      "language": "en",
+      "position": "mid",
+      "model": "claude-opus-4-7",
+      "rate": 0.2676056338028169,
+      "support": 213
+    },
+    {
+      "bin": 5,
+      "from": 80,
+      "to": null,
+      "language": "en",
+      "position": "mid",
+      "model": "claude-opus-4-8",
+      "rate": 0.2134935304990758,
+      "support": 1082
+    },
+    {
+      "bin": 5,
+      "from": 80,
+      "to": null,
+      "language": "en",
+      "position": "mid",
+      "model": "claude-opus-5",
+      "rate": 0.22511848341232227,
+      "support": 422
+    },
+    {
+      "bin": 5,
+      "from": 80,
+      "to": null,
+      "language": "en",
+      "position": "mid",
+      "model": "claude-sonnet-5",
+      "rate": 0.21691176470588236,
+      "support": 272
+    },
+    {
+      "bin": 5,
+      "from": 80,
+      "to": null,
+      "language": "fr",
+      "position": "last",
+      "model": "*",
+      "rate": 0.24750499001996007,
+      "support": 501
+    },
+    {
+      "bin": 5,
+      "from": 80,
+      "to": null,
+      "language": "fr",
+      "position": "last",
+      "model": "claude-opus-4-8",
+      "rate": 0.23577235772357724,
+      "support": 246
+    },
+    {
+      "bin": 5,
+      "from": 80,
+      "to": null,
+      "language": "fr",
+      "position": "last",
+      "model": "claude-opus-5",
+      "rate": 0.2358490566037736,
+      "support": 212
+    },
+    {
+      "bin": 5,
+      "from": 80,
+      "to": null,
+      "language": "fr",
+      "position": "last",
+      "model": "claude-sonnet-4-6",
+      "rate": 0.37209302325581395,
+      "support": 43
+    },
+    {
+      "bin": 5,
+      "from": 80,
+      "to": null,
+      "language": "fr",
+      "position": "mid",
+      "model": "*",
+      "rate": 0.24132804757185333,
+      "support": 2018
+    },
+    {
+      "bin": 5,
+      "from": 80,
+      "to": null,
+      "language": "fr",
+      "position": "mid",
+      "model": "claude-opus-4-8",
+      "rate": 0.2359081419624217,
+      "support": 958
+    },
+    {
+      "bin": 5,
+      "from": 80,
+      "to": null,
+      "language": "fr",
+      "position": "mid",
+      "model": "claude-opus-5",
+      "rate": 0.24373119358074222,
+      "support": 997
+    },
+    {
+      "bin": 5,
+      "from": 80,
+      "to": null,
+      "language": "fr",
+      "position": "mid",
+      "model": "claude-sonnet-4-6",
+      "rate": 0.2857142857142857,
+      "support": 63
+    }
+  ]
+}

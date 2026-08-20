@@ -1,0 +1,348 @@
+# Methodology
+
+How each number in the [post](../README.md) was arrived at, and what it cannot support.
+
+The code carries no comments. This document is where the reasoning lives instead: every choice
+below is one that changes an output, and each names the module that implements it.
+
+caveman is measured **bottom-up** — a model of one channel, fitted offline, then replayed over
+real transcripts. There is one A/B trial behind one parameter, and it is stated as such. Nothing
+else here is an experiment.
+
+---
+
+## 1. Cost, which is not an estimate
+
+`src/billing/pricing.ts`
+
+The bill is arithmetic, not modelling. Each assistant message in a transcript carries its own
+usage object; each is priced at the published API rate for its model, at its timestamp, with the
+token classes billed separately (input, output, 5-minute cache write, 1-hour cache write, cache
+read). It reconciles with Claude Code's own `total_cost_usd` to the cent.
+
+Two places it cannot:
+
+- **Unpriced, never zero.** A model with no rate-card entry — a research preview, something
+  newer than this build — has its tokens counted and reported as unpriced. It is never silently
+  treated as free.
+- **Duplicated messages.** Resumed and forked sessions re-record earlier turns verbatim into a
+  new transcript. A message id is priced once across the whole corpus; first file wins, which is
+  the older transcript. `dedupeSessions` in `src/transcript/load.ts`.
+
+### Counting prose tokens
+
+`src/transcript/tokens.ts`
+
+The bill gives token counts per turn, but not how many of them were prose. Prose has to be
+counted separately, and the offline counter is a legacy BPE count scaled by a calibration
+constant fitted per tokenizer family.
+
+That constant is fitted **per person as well as per model**: `calibrateLocally` splits the
+turns that are text-only and fence-free — where `output_tokens` _is_ the prose token count — into
+a fit half and a holdout half, and reports the holdout error alongside every figure. Roughly a
+tenth of prose tokens are exact for free this way.
+
+The per-person part of that fit is the reason cells band on **words** rather than tokens (§4).
+Two people writing the same sentence would otherwise be judged against different cutoffs.
+
+`--exact` swaps the offline counter for Anthropic's `count_tokens` endpoint. It is an opt-in
+upgrade rather than the happy path: requiring an API key to compute a savings report would be a
+bad dependency for a tool meant to run on other people's machines.
+
+---
+
+## 2. Positional replay — how a counterfactual is priced
+
+`src/transcript/replay.ts`
+
+A token written into the prefix at turn 3 of a 200-turn session is **re-read by every later
+turn** as a cache read. The same token written at turn 199 is read once. A flat "tokens removed
+× price" understates the first and overstates the second, and the error is not small — it scales
+with session length.
+
+So a counterfactual is priced by replaying the session: change the token count at one position,
+recompute the cache-read amplification for every subsequent turn, and difference the totals.
+
+The replay is exact on the observed side. The arm that actually happened is never modelled, only
+the arm that did not. That is why a session that already ran caveman is replayed **backwards**,
+reconstructing the vanilla it would have been, while a vanilla session is replayed forwards.
+`replaySession` branches on `cavemanActive` for exactly that reason, and the ratio is inverted in
+the ON direction.
+
+---
+
+## 3. Two numbers, not one
+
+`src/effects/caveman/analyze.ts`, `src/effects/caveman/effect.ts`
+
+```
+effective_ratio(turn) = p_fire(turn) × R(turn) + (1 − p_fire(turn)) × 1.0
+```
+
+Charging `R` to every turn — which is what a scalar ratio does — prices the tool as if it always
+fired, and roughly doubles the estimate. Both halves are needed and they are estimated by
+different instruments: `p_fire` from observation, `R` from a trial.
+
+Three details in that line change the answer:
+
+- **Language is detected per turn, not per session.** The level is keyed on it, and a French
+  developer working in an English codebase mixes constantly. Closing `R` is keyed on the
+  language the turn was _written_ in, not the session's or the contributor's.
+- **A session where the user switched caveman off mid-way** holds turns that are already
+  vanilla. Those get a ratio of 1, which leaves them at their observed length instead of
+  inflating them into a counterfactual that never happened. They are also excluded from the
+  `p_fire` weighting: a deactivation is not a turn the model declined to fire on.
+- **The mean `p_fire` reported is token-weighted**, because that is the weighting the bill uses.
+  A 900-token wrap-up and a 12-token acknowledgement do not count the same, and an unweighted
+  mean would report the mid-run stratum's low rate as though it drove the money.
+
+### The hard upper bound
+
+Prose is the only thing the tool can move, so the prose share of the bill caps what any
+prose-compressing tool could ever save. That share is computed from the transcripts and printed
+with every headline. A claimed saving above it is a bug, not a result.
+
+---
+
+## 4. `p_fire` — the detector, the floor, the strata
+
+`src/effects/caveman/{style,compliance,samples,prior}.ts`
+
+A turn counts as caveman-style when its mean sentence length falls below the 25th percentile of
+**vanilla** turns in the same cell: language × size band (in words) × bullet-vs-prose shape ×
+model family.
+
+### The floor is measured, never assumed
+
+Vanilla turns trip a 25th-percentile detector 25% of the time by construction. That
+false-positive floor is measured per (index bin × language × position × model) and subtracted:
+
+```
+p_fire = (observed − floor) / (1 − floor)
+```
+
+Sensitivity — how often caveman fires and the detector misses — is unknown and taken as 1. That
+makes every figure a **lower** bound. Sweeping `--quantile` is the sensitivity check on the 0.25:
+were the detector perfect the estimate would not move at all, so how far it moves is how loose
+the bound is. Measured, it plateaus from 0.25 upward on well-sampled bins and collapses below it.
+
+### Why model family is in the cell
+
+Vanilla terseness spans 28 points between model families, and the two arms are badly unbalanced
+on it — in the corpora fitted here the treatment arm was 81% Opus 5 against 20% of the control, a
+61-point gap. A cutoff pooled across families judges Opus 5 turns terse against a bar that other
+models set.
+
+`compliance` prints the ON/OFF model mix above every curve and flags a gap over 20 points.
+`--model <family>` restricts both arms and is the only like-for-like read of a mixed corpus.
+
+A family with too little vanilla writing of its own falls back to a cross-model roll-up, fitted
+from the same turns rather than averaged from the per-family rows. Those turns are counted and
+reported, not silently borrowed.
+
+### The stratifier is position, not structure
+
+The first split tried was "pure text" versus "carries a tool call", and it produced a clean
+result: pure-text compliance flat across the session, tool-carrying compliance collapsing. It was
+an artifact. Every pure-text turn in the corpus is the model's closing turn — `P(last | pure)` is
+100% — so the flag was measuring position in the answer, not structure.
+
+The replacement is `lastOfRun`: a turn closes a run when the next turn is preceded by a user
+prompt, or when nothing follows it (`lastOfRunFlags` in `src/transcript/session.ts`). Closing
+turns are 23.6% of turns and 77.6% of prose tokens.
+
+Position-from-the-end as a continuous variable was tested as a substitute and was worse. The
+model flips into wrap-up mode on exactly one turn, so the binary flag is the right shape.
+
+Turn type is a **level, not a slope**: both strata decay at the same rate, so the model keeps the
+closing-turn intercept and drops the interaction.
+
+### Bands are in words, not tokens
+
+`bandDefinitionSweep` prints what the answer would have been under token banding, so the cost of
+this choice is on the record rather than assumed away. Words win on grounds the numbers cannot
+settle: the token counter is calibrated per model _and_ per person (§1), so token bands would let
+two people writing the same sentence be judged against different cutoffs.
+
+### The shipped prior
+
+`src/effects/caveman/prior.ts`
+
+"What would caveman save me" is a question about a population the asker is not yet a member of,
+so for anyone with no caveman sessions it can only be answered by a prior:
+
+```
+p_fire = sigma(a_language + c · closesRun + b · ln(1 + turnIndex))
+```
+
+Fitted by maximum likelihood over `P(terse) = floor + (1 − floor) · p_fire` — the same
+contamination model the bin estimator corrects for, so the two are on one scale.
+
+`c` (the closing-turn gap) and `b` (the decay) transfer between people and carry cluster
+bootstrap intervals. **`a` does not transfer.** So the fit also ships the
+leave-one-contributor-out width of the whole estimate, and the report prints that band in the
+headline rather than behind a flag. On this corpus that width is 45.3% to 71.6%, and the
+contributor who moves it down most holds none of the caveman-live turns at all — they move the
+estimate entirely through the control.
+
+Resolution order per turn, most specific first: this stratum's own measured bin, the pooled bin
+for that depth split by `c`, the nearest earlier bin, then the prior — never 1. Someone with
+their own caveman turns is answered from their own turns; the prior is a floor on usefulness,
+not a ceiling on accuracy. A report says which of the two priced it, and a prior-priced report
+labels itself a projection.
+
+Two limits stay on the record. A language level resting on a single contributor means "the
+French level" and "that person's level" are the same number, and the fit records the contributor
+count that says so. And the logistic is a smooth approximation of a shape that is not smooth — a
+cliff after roughly turn 5, a plateau, a collapse past 80 — so each build records the largest
+disagreement between a measured bin and the formula over the same turns.
+
+---
+
+## 5. `R` — the paired trial
+
+`src/effects/caveman/trial/`
+
+`R` is the one parameter here with an experiment behind it. 36 headless runs, 18 pairs,
+`claude-opus-5`: two arms against identical prompts and an identical pinned repository state,
+differing only in caveman.
+
+| stratum        | R    | basis                                   |
+| -------------- | ---- | --------------------------------------- |
+| closing, en    | 0.83 | n=9, blended 0.828 at 9/9 compliance    |
+| closing, fr    | 0.54 | n=6, blended 0.614 deconvolved at 5/6   |
+| closing, other | 0.71 | pooled fallback for undetected language |
+| mid-run        | 0.56 | **placeholder**                         |
+
+Three things about that table are load-bearing.
+
+**The stored values are deconvolved.** The replay computes `p·R + (1−p)`, so `R` must mean
+compression _given firing_. The trial measures the ratio over all treated turns, fired or not;
+handing that blended figure to a formula that blends again counts the non-firing turns twice.
+English was 9/9 compliant so it is unchanged; French was 5/6, taking 0.614 to 0.537 — a
+correction resting on a single unflagged turn.
+
+**Arms are isolated by `CLAUDE_CONFIG_DIR`.** `--settings` merges rather than replaces and leaks
+the host's own hooks into the control arm; running bare kills the hooks the treatment arm needs.
+Each run's arm is then re-derived from the injections in its own transcript rather than trusted
+from the launcher, so a leak discards a pair instead of quietly biasing it.
+
+**Mid-run `R` is not a measurement.** Leave-one-prompt-out moved it from 0.56 to 1.76 — a range
+straddling 1.0, so the data cannot exclude caveman making mid-run turns _longer_. The cause is
+mechanical rather than statistical: headless agents barely narrate between tool calls, averaging
+2.0 (treated) and 3.6 (control) prose tokens against 71 in the real corpus. More headless budget
+will not fix it; the instrument does not reproduce the phenomenon. Measuring it needs interactive
+capture.
+
+`closing-tool` as a stratum does not exist: 0 of 18 pairs, 0.4% of the corpus. An earlier
+estimate that it was 47.9% of turns was an artifact of `onlyTextBlocks`, which every thinking
+block makes false.
+
+### The band, not the point
+
+`src/effects/caveman/sensitivity.ts`
+
+Totals are recomputed across 0.35 (the old assumption, kept so a reader can see how far the
+measurement moved the answer), the measured per-language floor and ceiling, and two corners that
+break the strata apart with mid-run at 0.12 and 1.20. The upper corner is above 1.0 deliberately:
+a band that stopped there would assert something leave-one-out could not support. If the sign
+flips anywhere inside the band, the headline is indeterminate — and on this corpus it does.
+
+---
+
+## 6. The cost side
+
+`src/transcript/injection.ts`
+
+caveman injects tokens: a ruleset block at session start, and a reminder per user prompt. Both
+are counted from the transcripts of sessions where it actually ran — 457 to 467 tokens once per
+session, 34 to 50 tokens per user turn.
+
+The two streams are kept apart rather than summed. A block at prefix position 0 is re-read every
+turn; a per-prompt reminder arriving at turn 20 of 25 is re-read five times. A combined total
+misprices both. Short sessions can come out **net negative** once injection is priced in, and the
+report says so.
+
+The SessionStart block re-fires at a compaction boundary, so caveman survives compaction. That is
+already in the transcripts and needs no separate term.
+
+### Deduplication, and why savings are measured against a correct install
+
+An injection delivered more than once on the same turn is priced once. This is not a rounding
+decision.
+
+The machine one corpus came from registered each caveman hook twice — once in `settings.json`,
+once via the enabled plugin, both binding the same scripts to the same events — so 263 of 266
+injection-carrying turns paid for the same reminder twice: 96,316 injected tokens where 47,896
+were needed, 102 tokens per prompt where 51 were.
+
+Charging that to caveman answers the wrong question. The report exists to decide whether to _run_
+the tool, and nobody chooses to run it misconfigured. It was decisive rather than cosmetic: the
+duplicate cost $1.67 against a $2.72 prose gain, which is the entire reason that corpus's
+headline had been negative.
+
+The consequence is accepted deliberately and surfaced rather than buried: **totals no longer
+reconcile with the invoice.** `Totals.paidUSD` keeps what was actually billed,
+`Totals.misconfiguredUSD` is the gap, and the report prints `paid twice for nothing` with its
+cause without being asked. A reader who spotted the discrepancy unaided would otherwise conclude
+the tool is miscounting rather than that their config is.
+
+Deduplication is **per turn**. The same reminder arriving on many turns is exactly what a
+per-prompt hook is for; counting across turns would report a correct install as broken. And
+because the correction is a positional delta rather than a flat subtraction, a duplicate landing
+at turn 2 of 200 is credited with the 198 re-reads it actually caused.
+
+---
+
+## 7. What none of this can answer
+
+Stated plainly, because the numbers above are otherwise easy to over-read.
+
+**Behavioural effects.** Compressed output changes what the agent does next. A retry caused by
+over-compression is a negative saving, and nothing measured offline can see it. Only a randomized
+trial can, and this project does not run one over real work.
+
+**Whether the mid-run ratio is right.** Closing turns have a measurement; mid-run turns have a
+placeholder whose leave-one-out range straddles 1.0. It is labelled, banded, and capped by a
+measured bound — but it has not been measured, and no headless instrument can measure it.
+
+**Whether caveman moves thinking tokens.** Assumed not, and the assumption was tested rather than
+waved through. Transcripts store thinking blocks with empty text, so the only available estimator
+is a residual — billed output minus visible text minus tool arguments — which came out **negative**
+on 2 of 16 trial pairs and is therefore not an estimator at all. This matters more than its
+position in this list suggests: thinking is ~89% of billed output on this corpus, so if caveman
+does compress it, every figure here understates the saving by a large factor.
+
+**Whether the trial's instrument matches the corpus it prices.** It does not, and the gap is
+stated rather than closed. Every trial run was a fresh single-prompt headless session on one
+model with 9/9 English compliance; the corpus is interactive, multi-model, hundreds of turns
+long, and 45–72% compliant. Applying the first to the second is an extrapolation. At n=16 the
+trial's own end-to-end cost comparison is also underpowered — pairs where the treated arm was
+cheaper: 10 of 16, a sign test at p≈0.45 — so the trial establishes a ratio, not a verdict.
+
+**How much any of this generalises.** Any single pooled percentage describes the heaviest spender
+while appearing to describe everyone, which is why per-corpus rows are the result and the pooled
+line is a footnote. Savings are convex in `p_fire`: halving the fire rate cut savings elevenfold,
+so a prediction should be compared against a measured fire rate, not against dollars.
+
+---
+
+## 8. Where each thing lives
+
+| Path                                 | What it is                                         |
+| ------------------------------------ | -------------------------------------------------- |
+| `src/adapters/`                      | Claude Code transcript reader                      |
+| `src/transcript/session.ts`          | turns, injections, run boundaries                  |
+| `src/transcript/replay.ts`           | positional pricing of a counterfactual             |
+| `src/transcript/injection.ts`        | measuring caveman's own token cost                 |
+| `src/transcript/tokens.ts`           | prose token counting and its calibration           |
+| `src/billing/pricing.ts`             | the rate card                                      |
+| `src/effects/caveman/style.ts`       | the detector: language, shape, sentence length     |
+| `src/effects/caveman/compliance.ts`  | cells, cutoffs, floors, `p_fire` by bin            |
+| `src/effects/caveman/prior.ts`       | the shipped logistic prior                         |
+| `src/effects/caveman/analyze.ts`     | the replay that produces the headline              |
+| `src/effects/caveman/sensitivity.ts` | the band and the leave-one-out spread              |
+| `src/effects/caveman/trial/`         | the paired A/B that measures `R`                   |
+| `src/cli/`                           | one file per command                               |
+| `curves/`                            | fitted thresholds, floors and prior                |
+| `data/caveman/`                      | the contributed observations they were fitted from |

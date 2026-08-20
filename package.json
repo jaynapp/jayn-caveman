@@ -1,0 +1,37 @@
+{
+  "name": "jayn-caveman",
+  "version": "1.0.0",
+  "private": true,
+  "description": "The measurement code behind \"Caveman made us lose money, and probably you too\"",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "license": "Apache-2.0",
+  "contributors": [
+    "Hugo Puybareau <hugo.puybareau@gmail.com>",
+    "Maxence Rossignol <maxence@jayn.app>"
+  ],
+  "scripts": {
+    "cli": "tsx src/index.ts",
+    "test": "tsx --test \"src/**/*.test.ts\"",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "@types/node": "^22.10.2",
+    "eslint": "^9.39.5",
+    "eslint-import-resolver-typescript": "^4.4.5",
+    "eslint-plugin-import-x": "^4.17.1",
+    "prettier": "^3.9.6",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.67.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/tokenizer": "^0.0.4"
+  }
+}

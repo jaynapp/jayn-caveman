@@ -1,0 +1,146 @@
+{
+  "fittedAt": "2026-08-13T16:36:44.611Z",
+  "corpora": [
+    {
+      "id": "corpus-a",
+      "vanillaTurns": 838
+    },
+    {
+      "id": "corpus-b",
+      "vanillaTurns": 697
+    },
+    {
+      "id": "corpus-c",
+      "vanillaTurns": 348
+    },
+    {
+      "id": "corpus-d",
+      "vanillaTurns": 380
+    },
+    {
+      "id": "corpus-e",
+      "vanillaTurns": 2423
+    },
+    {
+      "id": "corpus-f",
+      "vanillaTurns": 7237
+    },
+    {
+      "id": "corpus-g",
+      "vanillaTurns": 1
+    }
+  ],
+  "quantile": 0.5,
+  "cells": {
+    "en|0|prose": {
+      "cutoff": 10,
+      "support": 3754
+    },
+    "en|1|prose": {
+      "cutoff": 13.333333333333334,
+      "support": 1944
+    },
+    "en|2|list": {
+      "cutoff": 9,
+      "support": 43
+    },
+    "en|2|prose": {
+      "cutoff": 17.333333333333332,
+      "support": 926
+    },
+    "en|3|list": {
+      "cutoff": 16,
+      "support": 258
+    },
+    "en|3|prose": {
+      "cutoff": 20.333333333333332,
+      "support": 417
+    },
+    "en|4|list": {
+      "cutoff": 19.555555555555557,
+      "support": 875
+    },
+    "en|4|prose": {
+      "cutoff": 21.11111111111111,
+      "support": 289
+    },
+    "en|5|list": {
+      "cutoff": 16.8,
+      "support": 44
+    },
+    "fr|0|prose": {
+      "cutoff": 9.5,
+      "support": 1146
+    },
+    "fr|1|prose": {
+      "cutoff": 11.5,
+      "support": 952
+    },
+    "fr|2|prose": {
+      "cutoff": 15,
+      "support": 289
+    },
+    "fr|3|list": {
+      "cutoff": 12.5,
+      "support": 64
+    },
+    "fr|3|prose": {
+      "cutoff": 16,
+      "support": 62
+    },
+    "fr|4|list": {
+      "cutoff": 16.25,
+      "support": 283
+    },
+    "fr|4|prose": {
+      "cutoff": 19.076923076923077,
+      "support": 130
+    },
+    "fr|5|list": {
+      "cutoff": 18.77777777777778,
+      "support": 68
+    },
+    "fr|5|prose": {
+      "cutoff": 18.272727272727273,
+      "support": 44
+    }
+  },
+  "floors": [
+    {
+      "from": 0,
+      "to": 5,
+      "rate": 0.3580131208997188,
+      "support": 1067
+    },
+    {
+      "from": 5,
+      "to": 10,
+      "rate": 0.4785714285714286,
+      "support": 700
+    },
+    {
+      "from": 10,
+      "to": 20,
+      "rate": 0.5068783068783069,
+      "support": 945
+    },
+    {
+      "from": 20,
+      "to": 40,
+      "rate": 0.5333827893175074,
+      "support": 1348
+    },
+    {
+      "from": 40,
+      "to": 80,
+      "rate": 0.4948630136986301,
+      "support": 1752
+    },
+    {
+      "from": 80,
+      "to": null,
+      "rate": 0.49428670360110805,
+      "support": 5776
+    }
+  ]
+}
