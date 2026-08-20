@@ -96,3 +96,33 @@ export const PROMPTS: readonly TrialPrompt[] = [...ONESHOT, ...SHORT, ...LONG];
 export function promptById(id: string): TrialPrompt | undefined {
   return PROMPTS.find((prompt) => prompt.id === id);
 }
+
+/**
+ * Split the prompt list between operators, as `k/n` — shard 1 of 2, and so on.
+ *
+ * Two people sharing a design need disjoint prompts, not a disjoint stretch of the queue: `next`
+ * recomputes what is outstanding from the ledger on every call, so "you start from the end" drifts
+ * the moment either of them records a run. Sharing a prompt is worse than duplicated effort. The
+ * k-th ON run pairs with the k-th OFF run by completion order, so a prompt run by both people
+ * merges into pairs that straddle them, and on the interactive tiers the operator is half of what
+ * the pair measures.
+ *
+ * Prompts are dealt within tier rather than across the flat list, so every shard covers every
+ * tier. An operator effect then spreads over all three cells instead of landing entirely on one,
+ * where it would be indistinguishable from the cell itself.
+ */
+export function shard(prompts: readonly TrialPrompt[], spec: string): TrialPrompt[] {
+  const [k, n] = spec.split('/').map(Number);
+  if (!Number.isInteger(k) || !Number.isInteger(n) || n < 1 || k < 1 || k > n) {
+    throw new Error(`--shard wants k/n with 1 <= k <= n, got "${spec}"`);
+  }
+  const mine = new Set<string>();
+  for (const tier of TIERS) {
+    prompts
+      .filter((prompt) => prompt.tier === tier)
+      .forEach((prompt, index) => {
+        if (index % n === k - 1) mine.add(prompt.id);
+      });
+  }
+  return prompts.filter((prompt) => mine.has(prompt.id));
+}

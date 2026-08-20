@@ -105,10 +105,11 @@ export interface ImportOptions {
   existing: readonly RunRecord[];
   since?: Date;
   model?: string;
+  operator?: string;
 }
 
 export async function importSessions(options: ImportOptions): Promise<ImportReport> {
-  const { from, existing, since, model } = options;
+  const { from, existing, since, model, operator } = options;
   const seen = new Set(existing.map((record) => record.sessionId));
   const nextRepeat = new Map<string, number>();
   for (const record of existing) {
@@ -176,6 +177,7 @@ export async function importSessions(options: ImportOptions): Promise<ImportRepo
     const repeat = nextRepeat.get(key) ?? 0;
     nextRepeat.set(key, repeat + 1);
     records.push({
+      ...(operator ? { operator } : {}),
       promptId: prompt.id,
       model: sessionModel,
       arm,

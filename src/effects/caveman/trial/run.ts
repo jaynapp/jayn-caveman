@@ -16,6 +16,9 @@ export interface RunPlan {
 }
 
 export interface RunRecord extends RunPlan {
+  /** Who ran it. Unset on runs recorded before the trial was shared between operators. */
+  operator?: string;
+
   sessionId: string;
   transcript: string;
   costUsd: number;
@@ -158,6 +161,8 @@ export interface TrialOptions {
   repeats: number;
   prompts?: readonly TrialPrompt[];
 
+  operator?: string;
+
   onRecord?: (record: RunRecord, remaining: number) => void;
 
   onFailure?: (plan: RunPlan, error: Error) => void;
@@ -189,6 +194,7 @@ export async function runTrial(options: TrialOptions): Promise<RunRecord[]> {
       const leaks = leaksIn(lines);
       const record: RunRecord = {
         ...plan,
+        ...(options.operator ? { operator: options.operator } : {}),
         sessionId,
         transcript,
         costUsd: result.total_cost_usd ?? 0,

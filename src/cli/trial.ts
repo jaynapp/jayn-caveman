@@ -12,7 +12,13 @@ import {
 } from '../effects/caveman/compliance.js';
 import { readThresholdFile } from '../effects/caveman/thresholds.js';
 import { admissible, armDir, buildArms, leaksIn, type Arm } from '../effects/caveman/trial/arms.js';
-import { PROMPTS, TIERS, type Tier, type TrialPrompt } from '../effects/caveman/trial/prompts.js';
+import {
+  PROMPTS,
+  shard,
+  TIERS,
+  type Tier,
+  type TrialPrompt,
+} from '../effects/caveman/trial/prompts.js';
 import {
   CELLS,
   estimateCell,
@@ -95,7 +101,7 @@ const USAGE = `jayn-caveman trial — paired A/B measuring caveman's compression
 Usage:
   jayn-caveman trial sheet     --root <dir> [--repeats <n>] [--tier <name>] [--prompts <a,b>]
   jayn-caveman trial next      --root <dir> [--sandbox <dir>] [--repeats <n>]
-  jayn-caveman trial import    --root <dir> [--from <dir>] [--since <date>]
+  jayn-caveman trial import    --root <dir> [--from <dir>] [--since <date>] [--operator <who>]
   jayn-caveman trial init      --root <dir>
   jayn-caveman trial plan      [--repeats <n>] [--tier <name>]
   jayn-caveman trial run       --root <dir> --sandbox <dir> [--model <id>] [--repeats <n>]
@@ -112,6 +118,11 @@ Usage:
   --repeats <n>       pairs per prompt (default: ${DEFAULT_REPEATS})
   --tier <name>       restrict to one tier: ${TIERS.join(', ')}
   --prompts <a,b>     restrict to named prompt ids
+  --shard <k/n>       take shard k of n: prompts dealt within tier, so two operators run
+                      disjoint prompts and no pair can straddle them
+  --operator <who>    stamp runs with who produced them; analyze then refuses any pair
+                      whose two arms carry different names
+  --permission-mode   passed to the session on 'next' — hold it identical across operators
 
 The model is fixed across arms deliberately. The corpus's one within-person contrast is ON
 opus-5 against OFF opus-4-8, which is exactly why that person's numbers settle nothing.
@@ -124,7 +135,11 @@ function selectedPrompts(args: Args) {
   const ids = args.list('prompts');
   const tier = args.value('tier') as Tier | undefined;
   if (tier && !TIERS.includes(tier)) throw new Error(`--tier must be one of ${TIERS.join(', ')}`);
-  return PROMPTS.filter((prompt) => (!ids || ids.includes(prompt.id)) && (!tier || prompt.tier === tier));
+  const chosen = PROMPTS.filter(
+    (prompt) => (!ids || ids.includes(prompt.id)) && (!tier || prompt.tier === tier),
+  );
+  const spec = args.value('shard');
+  return spec ? shard(chosen, spec) : chosen;
 }
 
 async function readLedger(root: string): Promise<RunRecord[]> {
@@ -166,9 +181,18 @@ async function pairsFrom(records: readonly RunRecord[]) {
   let inadmissible = 0;
   let incomplete = 0;
   let relabelled = 0;
+  let crossOperator = 0;
   for (const slot of byKey.values()) {
     if (!slot.on || !slot.off) {
       incomplete++;
+      continue;
+    }
+    // A pair straddling two operators measures the operators as much as the arms: on the
+    // interactive tiers the person picks the follow-ups and the approvals. Prompts are sharded
+    // to keep that from happening; this is the check that the shard actually held. Runs recorded
+    // before operators were tracked carry none, and pair as they always did.
+    if (slot.on.operator && slot.off.operator && slot.on.operator !== slot.off.operator) {
+      crossOperator++;
       continue;
     }
     const [onProven, offProven] = [await proven(slot.on), await proven(slot.off)];
@@ -185,7 +209,7 @@ async function pairsFrom(records: readonly RunRecord[]) {
       off: await trialTurns(await analyzeSession(slot.off.transcript), counter),
     });
   }
-  return { pairs, inadmissible, incomplete, relabelled };
+  return { pairs, inadmissible, incomplete, relabelled, crossOperator };
 }
 
 function fixed(value: number, places = 3): string {
@@ -248,9 +272,15 @@ async function launch(
   arm: Arm,
   prompt: string,
   model: string,
+  permissionMode?: string,
 ): Promise<void> {
   await resetSandbox(sandbox);
-  const child = spawn('claude', ['--model', model, prompt], {
+  // Approving every tool call or reading each one is a free parameter of the operator, and on the
+  // short and long tiers it decides how much the agent does before it writes its closing prose.
+  // Two people running one design have to hold it at the same value, so it is a flag rather than
+  // a habit.
+  const flags = permissionMode ? ['--permission-mode', permissionMode] : [];
+  const child = spawn('claude', ['--model', model, ...flags, prompt], {
     cwd: sandbox,
     env: {
       ...process.env,
@@ -274,6 +304,7 @@ async function next(
   repeats: number,
   model: string,
   sandbox?: string,
+  permissionMode?: string,
 ): Promise<void> {
   const cells = outstanding(prompts, repeats, model, await completedRuns(root));
   const cell = cells[0];
@@ -288,13 +319,19 @@ async function next(
   if (sandbox) {
     console.log(`sandbox: ${sandbox}   config: ${armDir(root, cell.plan.arm)}`);
     console.log('');
-    await launch(root, sandbox, cell.plan.arm, cell.text, model);
+    await launch(root, sandbox, cell.plan.arm, cell.text, model, permissionMode);
   }
 }
 
-async function importRuns(root: string, from: string, since: Date | undefined, model: string): Promise<void> {
+async function importRuns(
+  root: string,
+  from: string,
+  since: Date | undefined,
+  model: string,
+  operator?: string,
+): Promise<void> {
   const existing = await readLedger(root).catch(() => [] as RunRecord[]);
-  const report = await importSessions({ from, existing, since, model });
+  const report = await importSessions({ from, existing, since, model, operator });
 
   console.log(`scanned ${report.scanned} transcripts under ${from}`);
   console.log(`${report.matched} matched a trial prompt`);
@@ -327,11 +364,12 @@ async function importRuns(root: string, from: string, since: Date | undefined, m
 
 async function analyze(root: string): Promise<void> {
   const records = await readLedger(root);
-  const { pairs, inadmissible, incomplete, relabelled } = await pairsFrom(records);
+  const { pairs, inadmissible, incomplete, relabelled, crossOperator } = await pairsFrom(records);
 
   console.log(
     `pairs: ${pairs.length} usable, ${inadmissible} dropped on arm proof, ${incomplete} half-recorded` +
-      (relabelled > 0 ? `, ${relabelled} re-judged against the ledger` : ''),
+      (relabelled > 0 ? `, ${relabelled} re-judged against the ledger` : '') +
+      (crossOperator > 0 ? `, ${crossOperator} dropped for straddling two operators` : ''),
   );
   console.log(
     `cost:  $${records.reduce((total, r) => total + r.costUsd, 0).toFixed(2)} over ${records.length} runs`,
@@ -398,7 +436,19 @@ export const trialCommand: Command = {
   summary: "run the paired A/B that measures caveman's compression ratio",
   usage: USAGE,
   spec: {
-    value: ['root', 'sandbox', 'model', 'repeats', 'tier', 'prompts', 'from', 'since'],
+    value: [
+      'root',
+      'sandbox',
+      'model',
+      'repeats',
+      'tier',
+      'prompts',
+      'from',
+      'since',
+      'shard',
+      'operator',
+      'permission-mode',
+    ],
     boolean: [],
   },
   async run(args: Args): Promise<void> {
@@ -457,7 +507,14 @@ export const trialCommand: Command = {
     }
 
     if (action === 'next') {
-      await next(root, prompts, repeats, model, args.value('sandbox'));
+      await next(
+        root,
+        prompts,
+        repeats,
+        model,
+        args.value('sandbox'),
+        args.value('permission-mode'),
+      );
       return;
     }
 
@@ -465,7 +522,13 @@ export const trialCommand: Command = {
       const raw = args.value('since');
       const since = raw ? new Date(raw) : undefined;
       if (since && Number.isNaN(since.getTime())) throw new Error(`--since is not a date: "${raw}"`);
-      await importRuns(root, args.value('from') ?? DEFAULT_TRANSCRIPTS, since, model);
+      await importRuns(
+        root,
+        args.value('from') ?? DEFAULT_TRANSCRIPTS,
+        since,
+        model,
+        args.value('operator'),
+      );
       return;
     }
 
@@ -488,6 +551,7 @@ export const trialCommand: Command = {
         sandbox,
         model,
         repeats,
+        operator: args.value('operator'),
         prompts,
         onRecord: (record, remaining) => {
           const proof = record.admissible ? 'ok' : 'ARM PROOF FAILED';
