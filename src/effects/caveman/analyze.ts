@@ -9,13 +9,7 @@ import { replaySession, totalsOf, type SessionResult, type Totals } from '../../
 import { lastOfRunFlags, type SessionAnalysis, type Turn } from '../../transcript/session.js';
 import { verifyCounter, type CounterCheck, type TokenCounter } from '../../transcript/tokens.js';
 import type { ToolEffect } from '../types.js';
-import {
-  CAVEMAN_RATIOS,
-  closingRatio,
-  RATIO_SENSITIVITY,
-  type CavemanRatios,
-  type RatioScenario,
-} from './effect.js';
+import { CAVEMAN_RATIOS, RATIO_SENSITIVITY, type CavemanRatios, type RatioScenario } from './effect.js';
 import { isUsable, loadPFireModel, pFireWithSource, type PFireModel, type PFireSource } from './pfire.js';
 import { detectLanguage } from './style.js';
 
@@ -107,7 +101,7 @@ export async function analyze(
     if (session.cavemanActive && !session.turns[index]?.cavemanLive) return 1;
     const turn = positionOf(session, index);
 
-    const R = turn.lastOfRun ? closingRatio(at, turn.language) : at.midRun;
+    const R = turn.lastOfRun ? at.closing : at.midRun;
 
     const p = chargeEveryTurn ? 1 : pFireWithSource(pFire.curve, turn, pFire.prior).p;
     return p * R + (1 - p);

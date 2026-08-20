@@ -112,12 +112,12 @@ crossing, a per-prompt reminder cannot pay for itself; well over, it might.
 
 ### `trial` — measuring R
 
-**This command spends money.** It launches headless Claude Code runs, two per pair. Ours was 36
-runs for 18 pairs and produced 9 usable English pairs.
+**This command spends money.** It launches headless Claude Code runs, two per pair. Ours was 18
+runs for 9 pairs, all English.
 
 ```bash
 npm run cli -- trial init  --root <ledger dir>
-npm run cli -- trial plan  --repeats 3 --langs en
+npm run cli -- trial plan  --repeats 3
 npm run cli -- trial run   --root <ledger dir> --sandbox <pinned repo>
 npm run cli -- trial analyze --root <ledger dir>
 ```
@@ -134,6 +134,39 @@ grinding on when the failure is fatal (no credit, bad key, blown quota).
 The mid-run stratum is **not** measurable this way and the command says so. Headless agents
 barely narrate between tool calls — 2.0 prose tokens on the treated arm against 71 in a real
 corpus — so its ratio is a placeholder everywhere it appears.
+
+### `trial` by hand — the interactive round
+
+Headless is the wrong instrument for mid-run `R`, and one repeat per cell is too few to tell
+within-prompt noise from between-prompt variation. Both are fixed by running the sessions
+interactively, which no launcher can do for you. So the same ledger accepts sessions a person
+ran by hand:
+
+```bash
+npm run cli -- trial sheet  --root <ledger dir>            # every outstanding cell, ready to paste
+npm run cli -- trial next   --root <ledger dir>            # just the next one
+#   ... run that session by hand, in the pinned sandbox ...
+npm run cli -- trial import --root <ledger dir> --since 2026-08-20
+npm run cli -- trial analyze --root <ledger dir>
+```
+
+Nothing about the session has to be written down. `import` scans your transcripts and recovers
+what the launcher would otherwise have known:
+
+| fact         | recovered from                                                                |
+| ------------ | ----------------------------------------------------------------------------- |
+| which prompt | the session's first human message, matched on collapsed whitespace            |
+| which arm    | the caveman injections in the transcript, through the same `admissible` check |
+| which repeat | completion order within (prompt, model, arm)                                  |
+
+Two consequences worth stating. **Do not edit the prompt text** — it is the key the importer
+matches on, so an edited prompt is a run you paid for and cannot use. And **the k-th ON session
+pairs with the k-th OFF session**, so run the arms alternately in the order the sheet prints
+rather than doing all of one arm first.
+
+An import is idempotent: a session already in the ledger is skipped by its id. Sessions where
+rtk or context-mode were live are rejected by name rather than counted, because both move prose
+length by a path that is not caveman.
 
 ### `curves` — refitting the shipped thresholds
 

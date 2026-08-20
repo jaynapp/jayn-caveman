@@ -1,4 +1,5 @@
-import { readFile } from 'node:fs/promises';
+import { appendFile, readFile } from 'node:fs/promises';
+import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { analyzeSession } from '../transcript/session.js';
 import { BpeCounter } from '../transcript/tokens.js';
@@ -10,16 +11,16 @@ import {
 } from '../effects/caveman/compliance.js';
 import { readThresholdFile } from '../effects/caveman/thresholds.js';
 import { admissible, buildArms, leaksIn } from '../effects/caveman/trial/arms.js';
-import { LANGS, PROMPTS, TIERS, type Lang, type Tier } from '../effects/caveman/trial/prompts.js';
+import { PROMPTS, TIERS, type Tier, type TrialPrompt } from '../effects/caveman/trial/prompts.js';
 import {
   CELLS,
   estimateCell,
-  languageAgreement,
   sensitivityByCell,
   trialTurns,
   type Pair,
   type TrialTurn,
 } from '../effects/caveman/trial/pair.js';
+import { importSessions, type Rejection } from '../effects/caveman/trial/import.js';
 import {
   completedRuns,
   LEDGER,
@@ -33,6 +34,40 @@ import {
 import type { Args, Command } from './args.js';
 
 const DEFAULT_MODEL = 'claude-opus-5';
+const DEFAULT_TRANSCRIPTS = join(homedir(), '.claude', 'projects');
+
+/**
+ * What an operator has to hold constant, printed on every sheet rather than kept in their head.
+ *
+ * These are not style rules. Each is a way an arm proof has already been broken: a second prompt
+ * in one session changes what `lastOfRun` means, an edited prompt stops matching the key the
+ * importer pairs on, and rtk or context-mode in either arm moves prose length by a path that is
+ * not caveman.
+ */
+const SHEET_RULES = [
+  'One prompt per session. Fresh session, paste, let it finish, close it.',
+  'Do not edit the prompt text. The importer matches on it — an edited prompt is a lost run.',
+  'Run every session in the same pinned sandbox checkout, not in your working tree.',
+  'Turn rtk and context-mode OFF for both arms. Either one voids the run.',
+  'Do not toggle caveman mid-session. The arm is read back from the injections.',
+  'Follow the order below: the k-th ON session is paired with the k-th OFF session.',
+];
+
+function outstanding(
+  prompts: readonly TrialPrompt[],
+  repeats: number,
+  model: string,
+  done: ReadonlySet<string>,
+) {
+  return planRuns(prompts, repeats, model, done).map((plan) => ({
+    plan,
+    text: prompts.find((prompt) => prompt.id === plan.promptId)!.text,
+  }));
+}
+
+function armLine(plan: { arm: string; promptId: string; repeat: number }): string {
+  return `arm: ${plan.arm.toUpperCase().padEnd(3)}   ${plan.promptId}  repeat ${plan.repeat}`;
+}
 const DEFAULT_REPEATS = 3;
 
 const TIER_FEEDS: Record<Tier, string> = {
@@ -56,16 +91,21 @@ const CELL_PRIORITY: Record<string, string> = {
 const USAGE = `jayn-caveman trial — paired A/B measuring caveman's compression ratio
 
 Usage:
+  jayn-caveman trial sheet     --root <dir> [--repeats <n>] [--tier <name>] [--prompts <a,b>]
+  jayn-caveman trial next      --root <dir> [--repeats <n>]
+  jayn-caveman trial import    --root <dir> [--from <dir>] [--since <date>]
   jayn-caveman trial init      --root <dir>
-  jayn-caveman trial plan      [--repeats <n>] [--langs en,fr] [--tier <name>]
+  jayn-caveman trial plan      [--repeats <n>] [--tier <name>]
   jayn-caveman trial run       --root <dir> --sandbox <dir> [--model <id>] [--repeats <n>]
   jayn-caveman trial analyze   --root <dir>
 
   --root <dir>        where the arms, the ledger and the transcripts live
+  --from <dir>        transcripts to import hand-run sessions from
+                      (default: ~/.claude/projects)
+  --since <date>      ignore sessions started before this, e.g. 2026-08-20
   --sandbox <dir>     the pinned worktree runs execute in (git worktree add … <sha>)
   --model <id>        held fixed across both arms (default: ${DEFAULT_MODEL})
-  --repeats <n>       pairs per prompt per language (default: ${DEFAULT_REPEATS})
-  --langs <a,b>       languages to run (default: ${LANGS.join(',')})
+  --repeats <n>       pairs per prompt (default: ${DEFAULT_REPEATS})
   --tier <name>       restrict to one tier: ${TIERS.join(', ')}
   --prompts <a,b>     restrict to named prompt ids
 
@@ -83,21 +123,23 @@ function selectedPrompts(args: Args) {
   return PROMPTS.filter((prompt) => (!ids || ids.includes(prompt.id)) && (!tier || prompt.tier === tier));
 }
 
-function selectedLangs(args: Args): Lang[] {
-  const raw = args.list('langs') ?? [...LANGS];
-  for (const lang of raw) {
-    if (!LANGS.includes(lang as Lang)) throw new Error(`--langs must be from ${LANGS.join(',')}`);
-  }
-  return raw as Lang[];
-}
-
 async function readLedger(root: string): Promise<RunRecord[]> {
   const text = await readFile(join(root, LEDGER), 'utf8').catch(() => {
     throw new Error(`no ${LEDGER} under ${root} — run \`jayn-caveman trial run\` first`);
   });
   const records: RunRecord[] = [];
+  let foreign = 0;
   for (const line of text.split('\n')) {
-    if (line.trim()) records.push(JSON.parse(line) as RunRecord);
+    if (!line.trim()) continue;
+    const record = JSON.parse(line) as RunRecord & { lang?: string };
+    if (record.lang !== undefined && record.lang !== 'en') {
+      foreign++;
+      continue;
+    }
+    records.push(record);
+  }
+  if (foreign > 0) {
+    console.log(`ledger: ${foreign} non-English runs from an older design skipped`);
   }
   return records;
 }
@@ -133,7 +175,6 @@ async function pairsFrom(records: readonly RunRecord[]) {
     }
     pairs.push({
       promptId: slot.on.promptId,
-      lang: slot.on.lang,
       model: slot.on.model,
       repeat: slot.on.repeat,
       on: await trialTurns(await analyzeSession(slot.on.transcript), counter),
@@ -165,6 +206,79 @@ function flagger(thresholds: Thresholds | null) {
   };
 }
 
+async function sheet(
+  root: string,
+  prompts: readonly TrialPrompt[],
+  repeats: number,
+  model: string,
+): Promise<void> {
+  const cells = outstanding(prompts, repeats, model, await completedRuns(root));
+  console.log(`${cells.length} sessions to run by hand — ${model}`);
+  console.log('');
+  for (const rule of SHEET_RULES) console.log(`  - ${rule}`);
+  console.log('');
+  const rule = '─'.repeat(78);
+  for (const [position, cell] of cells.entries()) {
+    console.log(`${String(position + 1).padStart(3)}/${cells.length}  ${armLine(cell.plan)}`);
+    console.log(rule);
+    console.log(cell.text);
+    console.log(rule);
+    console.log('');
+  }
+  console.log(`When a batch is done:  jayn-caveman trial import --root ${root}`);
+}
+
+async function next(
+  root: string,
+  prompts: readonly TrialPrompt[],
+  repeats: number,
+  model: string,
+): Promise<void> {
+  const cells = outstanding(prompts, repeats, model, await completedRuns(root));
+  const cell = cells[0];
+  if (!cell) {
+    console.log('nothing outstanding — every cell in the design is recorded');
+    return;
+  }
+  console.log(`${armLine(cell.plan)}   (${cells.length} left)`);
+  console.log('─'.repeat(78));
+  console.log(cell.text);
+  console.log('─'.repeat(78));
+}
+
+async function importRuns(root: string, from: string, since: Date | undefined, model: string): Promise<void> {
+  const existing = await readLedger(root).catch(() => [] as RunRecord[]);
+  const report = await importSessions({ from, existing, since, model });
+
+  console.log(`scanned ${report.scanned} transcripts under ${from}`);
+  console.log(`${report.matched} matched a trial prompt`);
+
+  const byReason = new Map<Rejection['reason'], Rejection[]>();
+  for (const rejection of report.rejected) {
+    byReason.set(rejection.reason, [...(byReason.get(rejection.reason) ?? []), rejection]);
+  }
+  for (const [reason, list] of byReason) {
+    console.log(`  ${String(list.length).padStart(3)} ${reason}`);
+    // A leak or a wrong model is something the operator can act on, so it is named rather than
+    // counted into a total they can do nothing about.
+    if (reason !== 'already recorded') for (const item of list) console.log(`        ${item.detail}`);
+  }
+
+  if (report.records.length === 0) {
+    console.log('nothing new to record');
+    return;
+  }
+  for (const record of report.records) {
+    await appendFile(join(root, LEDGER), `${JSON.stringify(record)}\n`);
+    console.log(
+      `+ ${record.promptId}/${record.repeat}/${record.arm}  ${record.numTurns} turns  ` +
+        `$${record.costUsd.toFixed(3)}  ${(record.wallMs / 1000).toFixed(0)}s`,
+    );
+  }
+  console.log('');
+  console.log(`${report.records.length} recorded. Analyse with: jayn-caveman trial analyze --root ${root}`);
+}
+
 async function analyze(root: string): Promise<void> {
   const records = await readLedger(root);
   const { pairs, inadmissible, incomplete, relabelled } = await pairsFrom(records);
@@ -179,7 +293,7 @@ async function analyze(root: string): Promise<void> {
   if (pairs.length === 0) return;
 
   console.log('');
-  console.log('R — prose ON ÷ OFF, within a pair. 0.35 is what the tool assumes today.');
+  console.log('R — prose ON ÷ OFF, within a pair. English only. The tool ships 0.83 closing.');
   console.log('Read the starred form: mass for closing cells, per-turn for mid-run.');
   console.log('');
   console.log('cell            form      pooled  median  IQR             pairs  drop  ON/OFF tok  turns');
@@ -204,11 +318,12 @@ async function analyze(root: string): Promise<void> {
   console.log('');
   console.log('mass silently multiplies two things: prose-per-turn (what R means) by turn count');
   console.log('(how much work the agent did). Closing turns are one per run per arm, so the');
-  console.log('counts cancel. mid-run has no such anchor — on this data one pair reported a mass');
-  console.log('ratio of 5.49 whose per-turn ratio was 1.05, entirely because the ON arm took 21');
-  console.log("mid-run turns to the OFF arm's 4. Dividing the count out is also why no pair has");
-  console.log('to be excluded: turn count is affected BY the treatment, so dropping pairs whose');
-  console.log('counts diverged selects on a post-treatment variable and biases what remains.');
+  console.log('counts cancel. mid-run has no such anchor — on this data add-test-lastofrun');
+  console.log('reported a mass ratio of 3.65 whose per-turn ratio was 1.83, entirely because the');
+  console.log("ON arm took 8 mid-run turns to the OFF arm's 4. Dividing the count out is also");
+  console.log('why no pair has to be excluded: turn count is affected BY the treatment, so');
+  console.log('dropping pairs whose counts diverged selects on a post-treatment variable and');
+  console.log('biases what remains — which is exactly how the French arm died.');
   console.log('');
   console.log('unscorable is ON/OFF turns under the ten-word floor. Those turns are IN the ratio');
   console.log('above and OUT of the sensitivity below — dropping them is what broke the');
@@ -230,26 +345,6 @@ async function analyze(root: string): Promise<void> {
       );
     }
   }
-
-  console.log('');
-  console.log('language agreement — did the model answer in the language it was asked in?');
-  for (const lang of LANGS) {
-    const inLang = pairs.filter((pair) => pair.lang === lang);
-    if (inLang.length === 0) continue;
-    let matched = 0;
-    let total = 0;
-    for (const pair of inLang) {
-      const agreement = languageAgreement(pair, lang);
-      matched += agreement.on + agreement.off;
-      total += agreement.total;
-    }
-    console.log(
-      `  ${lang}: ${matched}/${total} scorable turns (${fixed(total ? matched / total : Number.NaN, 2)})`,
-    );
-  }
-  console.log('');
-  console.log('A French arm that answered in English is not a French observation. Pooling the two');
-  console.log('reproduces the Simpson’s paradox that inverted the corpus article comparison.');
 }
 
 export const trialCommand: Command = {
@@ -257,13 +352,12 @@ export const trialCommand: Command = {
   summary: "run the paired A/B that measures caveman's compression ratio",
   usage: USAGE,
   spec: {
-    value: ['root', 'sandbox', 'model', 'repeats', 'langs', 'tier', 'prompts'],
+    value: ['root', 'sandbox', 'model', 'repeats', 'tier', 'prompts', 'from', 'since'],
     boolean: [],
   },
   async run(args: Args): Promise<void> {
     const action = args.positionals[0] ?? 'plan';
     const prompts = selectedPrompts(args);
-    const langs = selectedLangs(args);
     const repeats = args.number('repeats', DEFAULT_REPEATS, (n) => Number.isInteger(n) && n > 0);
 
     const model = args.valueOr('model', DEFAULT_MODEL);
@@ -271,8 +365,8 @@ export const trialCommand: Command = {
     if (action === 'plan') {
       const root = args.value('root');
       const done = root ? await completedRuns(root) : new Set<string>();
-      const plans = planRuns(prompts, langs, repeats, model, done);
-      const full = planRuns(prompts, langs, repeats, model).length;
+      const plans = planRuns(prompts, repeats, model, done);
+      const full = planRuns(prompts, repeats, model).length;
 
       if (root) {
         console.log(`${plans.length} runs outstanding of ${full} — ${full - plans.length} already recorded`);
@@ -280,13 +374,13 @@ export const trialCommand: Command = {
       } else {
         console.log(`${plans.length} runs — ${plans.length / 2} pairs on ${model}`);
       }
-      console.log(`langs: ${langs.join(', ')}   repeats: ${repeats}`);
+      console.log(`repeats: ${repeats}   English only`);
       console.log('');
       console.log('tier      prompts  pairs  feeds');
       for (const tier of TIERS) {
         const inTier = prompts.filter((prompt) => prompt.tier === tier);
         if (inTier.length === 0) continue;
-        const pairs = inTier.length * langs.length * repeats;
+        const pairs = inTier.length * repeats;
         console.log(
           `${tier.padEnd(8)}  ${String(inTier.length).padStart(7)}  ${String(pairs).padStart(5)}  ${TIER_FEEDS[tier]}`,
         );
@@ -294,7 +388,7 @@ export const trialCommand: Command = {
       console.log('');
       console.log('pairs per cell — the INDEPENDENT n, since turns inside one pair share a trajectory:');
       for (const [cell, tiers] of Object.entries(CELL_SOURCES) as [string, readonly Tier[]][]) {
-        const pairs = prompts.filter((prompt) => tiers.includes(prompt.tier)).length * langs.length * repeats;
+        const pairs = prompts.filter((prompt) => tiers.includes(prompt.tier)).length * repeats;
         const verdict = pairs >= 50 ? 'ok  ' : 'THIN';
         console.log(`  ${cell.padEnd(13)} ${String(pairs).padStart(3)}  ${verdict}  ${CELL_PRIORITY[cell]}`);
       }
@@ -310,6 +404,24 @@ export const trialCommand: Command = {
     }
 
     const root = args.required('root');
+
+    if (action === 'sheet') {
+      await sheet(root, prompts, repeats, model);
+      return;
+    }
+
+    if (action === 'next') {
+      await next(root, prompts, repeats, model);
+      return;
+    }
+
+    if (action === 'import') {
+      const raw = args.value('since');
+      const since = raw ? new Date(raw) : undefined;
+      if (since && Number.isNaN(since.getTime())) throw new Error(`--since is not a date: "${raw}"`);
+      await importRuns(root, args.value('from') ?? DEFAULT_TRANSCRIPTS, since, model);
+      return;
+    }
 
     if (action === 'init') {
       await buildArms(root);
@@ -330,19 +442,18 @@ export const trialCommand: Command = {
         sandbox,
         model,
         repeats,
-        langs,
         prompts,
         onRecord: (record, remaining) => {
           const proof = record.admissible ? 'ok' : 'ARM PROOF FAILED';
           console.log(
-            `${record.promptId}/${record.lang}/${record.repeat}/${record.arm}  ` +
+            `${record.promptId}/${record.repeat}/${record.arm}  ` +
               `${record.numTurns} turns  $${record.costUsd.toFixed(3)}  ${(record.wallMs / 1000).toFixed(0)}s  ` +
               `${proof}  (${remaining} left)`,
           );
         },
         onFailure: (plan, error) => {
           console.log(
-            `${plan.promptId}/${plan.lang}/${plan.repeat}/${plan.arm}  FAILED: ${error.message.split('\n')[0]}` +
+            `${plan.promptId}/${plan.repeat}/${plan.arm}  FAILED: ${error.message.split('\n')[0]}` +
               ' — left unrecorded, a resume retries it',
           );
         },

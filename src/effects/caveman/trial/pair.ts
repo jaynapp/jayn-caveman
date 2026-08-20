@@ -56,7 +56,6 @@ function wordCountFloor(turn: Pick<Turn, 'proseText'>): number {
 
 export interface Pair {
   promptId: string;
-  lang: string;
   model: string;
   repeat: number;
   on: readonly TrialTurn[];
@@ -201,11 +200,4 @@ export function sensitivityByCell(
     }
     return { cell, scorable, flagged, rate: scorable === 0 ? Number.NaN : flagged / scorable, unscorable };
   });
-}
-
-export function languageAgreement(pair: Pair, expected: string): { on: number; off: number; total: number } {
-  const share = (turns: readonly TrialTurn[]) =>
-    turns.filter((turn) => turn.scorable && turn.language === expected).length;
-  const scorable = (turns: readonly TrialTurn[]) => turns.filter((turn) => turn.scorable).length;
-  return { on: share(pair.on), off: share(pair.off), total: scorable(pair.on) + scorable(pair.off) };
 }

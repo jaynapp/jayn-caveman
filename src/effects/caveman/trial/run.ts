@@ -4,13 +4,12 @@ import { globSync } from 'node:fs';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 import { armDir, admissible, leaksIn, ARMS, type Arm, type LeakReport } from './arms.js';
-import { PROMPTS, type Lang, type TrialPrompt } from './prompts.js';
+import { PROMPTS, type TrialPrompt } from './prompts.js';
 
 const exec = promisify(execFile);
 
 export interface RunPlan {
   promptId: string;
-  lang: Lang;
   model: string;
   arm: Arm;
   repeat: number;
@@ -30,29 +29,26 @@ export interface RunRecord extends RunPlan {
 export const LEDGER = 'runs.jsonl';
 
 export function planKey(plan: RunPlan): string {
-  return `${plan.promptId}/${plan.lang}/${plan.model}/${plan.repeat}/${plan.arm}`;
+  return `${plan.promptId}/${plan.model}/${plan.repeat}/${plan.arm}`;
 }
 
 export function pairKey(plan: Omit<RunPlan, 'arm'>): string {
-  return `${plan.promptId}/${plan.lang}/${plan.model}/${plan.repeat}`;
+  return `${plan.promptId}/${plan.model}/${plan.repeat}`;
 }
 
 export function planRuns(
   prompts: readonly TrialPrompt[],
-  langs: readonly Lang[],
   repeats: number,
   model: string,
   done: ReadonlySet<string> = new Set(),
 ): RunPlan[] {
   const plans: RunPlan[] = [];
   for (const prompt of prompts) {
-    for (const lang of langs) {
-      for (let repeat = 0; repeat < repeats; repeat++) {
-        const order: readonly Arm[] = repeat % 2 === 0 ? ARMS : [...ARMS].reverse();
-        for (const arm of order) {
-          const plan = { promptId: prompt.id, lang, model, arm, repeat };
-          if (!done.has(planKey(plan))) plans.push(plan);
-        }
+    for (let repeat = 0; repeat < repeats; repeat++) {
+      const order: readonly Arm[] = repeat % 2 === 0 ? ARMS : [...ARMS].reverse();
+      for (const arm of order) {
+        const plan = { promptId: prompt.id, model, arm, repeat };
+        if (!done.has(planKey(plan))) plans.push(plan);
       }
     }
   }
@@ -160,7 +156,6 @@ export interface TrialOptions {
   sandbox: string;
   model: string;
   repeats: number;
-  langs: readonly Lang[];
   prompts?: readonly TrialPrompt[];
 
   onRecord?: (record: RunRecord, remaining: number) => void;
@@ -169,11 +164,11 @@ export interface TrialOptions {
 }
 
 export async function runTrial(options: TrialOptions): Promise<RunRecord[]> {
-  const { root, sandbox, model, repeats, langs } = options;
+  const { root, sandbox, model, repeats } = options;
   const prompts = options.prompts ?? PROMPTS;
   await mkdir(root, { recursive: true });
 
-  const plans = planRuns(prompts, langs, repeats, model, await completedRuns(root));
+  const plans = planRuns(prompts, repeats, model, await completedRuns(root));
   const records: RunRecord[] = [];
 
   for (const [position, plan] of plans.entries()) {
@@ -183,7 +178,7 @@ export async function runTrial(options: TrialOptions): Promise<RunRecord[]> {
     try {
       await resetSandbox(sandbox);
       const started = Date.now();
-      const result = await headless(prompt.text[plan.lang], plan.arm, root, sandbox, model);
+      const result = await headless(prompt.text, plan.arm, root, sandbox, model);
       const wallMs = Date.now() - started;
 
       const sessionId = result.session_id ?? '';

@@ -3,44 +3,40 @@ import type { ToolEffect } from '../types.js';
 export const CAVEMAN: ToolEffect = {
   id: 'caveman',
   label: 'caveman',
-  proseRatio: 0.71,
+  proseRatio: 0.83,
   source: 'benchmarked',
-  n: 15,
+  n: 9,
 };
 
-export type RatioLanguage = 'en' | 'fr' | 'unknown';
-
 export interface CavemanRatios {
-  closing: Record<RatioLanguage, number>;
-
+  closing: number;
   midRun: number;
 }
 
-export const CAVEMAN_RATIOS: CavemanRatios = {
-  closing: { en: 0.83, fr: 0.54, unknown: 0.71 },
-  midRun: 0.56,
-};
+export const MID_RUN_IS_A_GUESS =
+  'mid-run R is a pilot-informed placeholder, not a measurement: leave-one-out spans 0.31-1.42 ' +
+  'and the underlying turns average 2-4 prose tokens';
 
-export function closingRatio(ratios: CavemanRatios, language: string): number {
-  return ratios.closing[language as RatioLanguage] ?? ratios.closing.unknown;
-}
+export const CAVEMAN_RATIOS: CavemanRatios = {
+  closing: 0.83,
+  midRun: 0.86,
+};
 
 export interface RatioScenario {
   label: string;
   ratios: CavemanRatios;
-
   corner?: boolean;
 }
 
 function scale(closing: number, midRun: number): CavemanRatios {
-  return { closing: { en: closing, fr: closing, unknown: closing }, midRun };
+  return { closing, midRun };
 }
 
 export const RATIO_SENSITIVITY: readonly RatioScenario[] = [
   { label: 'both 0.35 (the old assumption)', ratios: scale(0.35, 0.35) },
-  { label: 'both 0.54 (measured floor, fr)', ratios: scale(0.54, 0.54) },
-  { label: 'measured per language', ratios: CAVEMAN_RATIOS },
-  { label: 'both 0.91 (measured ceiling, en)', ratios: scale(0.91, 0.91) },
-  { label: 'closing measured / mid-run 0.12', ratios: { ...CAVEMAN_RATIOS, midRun: 0.12 }, corner: true },
-  { label: 'closing measured / mid-run 1.20', ratios: { ...CAVEMAN_RATIOS, midRun: 1.2 }, corner: true },
+  { label: 'both 0.73 (measured IQR floor)', ratios: scale(0.73, 0.73) },
+  { label: 'measured (closing 0.83)', ratios: CAVEMAN_RATIOS },
+  { label: 'both 0.91 (measured IQR ceiling)', ratios: scale(0.91, 0.91) },
+  { label: 'closing measured / mid-run 0.31', ratios: { ...CAVEMAN_RATIOS, midRun: 0.31 }, corner: true },
+  { label: 'closing measured / mid-run 1.42', ratios: { ...CAVEMAN_RATIOS, midRun: 1.42 }, corner: true },
 ];

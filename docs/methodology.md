@@ -203,38 +203,48 @@ disagreement between a measured bin and the formula over the same turns.
 
 `src/effects/caveman/trial/`
 
-`R` is the one parameter here with an experiment behind it. 36 headless runs, 18 pairs,
-`claude-opus-5`: two arms against identical prompts and an identical pinned repository state,
-differing only in caveman.
+`R` is the one parameter here with an experiment behind it. 18 headless runs, 9 pairs,
+`claude-opus-5`, English only: two arms against identical prompts and an identical pinned
+repository state, differing only in caveman.
 
-| stratum        | R    | basis                                   |
-| -------------- | ---- | --------------------------------------- |
-| closing, en    | 0.83 | n=9, blended 0.828 at 9/9 compliance    |
-| closing, fr    | 0.54 | n=6, blended 0.614 deconvolved at 5/6   |
-| closing, other | 0.71 | pooled fallback for undetected language |
-| mid-run        | 0.56 | **placeholder**                         |
+| stratum      | R    | basis                                          |
+| ------------ | ---- | ---------------------------------------------- |
+| closing      | 0.83 | n=9 English pairs, blended 0.828 at 9/9 firing |
+| mid-run      | 0.86 | **placeholder**                                |
+| closing-tool | —    | 0 of 9 pairs produced one                      |
 
-Three things about that table are load-bearing.
+Four things about that table are load-bearing.
 
-**The stored values are deconvolved.** The replay computes `p·R + (1−p)`, so `R` must mean
-compression _given firing_. The trial measures the ratio over all treated turns, fired or not;
-handing that blended figure to a formula that blends again counts the non-firing turns twice.
-English was 9/9 compliant so it is unchanged; French was 5/6, taking 0.614 to 0.537 — a
-correction resting on a single unflagged turn.
+**The stored value is deconvolved, and here that was free.** The replay computes `p·R + (1−p)`,
+so `R` must mean compression _given firing_. The trial measures the ratio over all treated turns,
+fired or not; handing that blended figure to a formula that blends again counts the non-firing
+turns twice. The pilot fired on 9 of 9 closing turns, so `p_trial` is 1 and 0.828 passes through
+unchanged. On a real corpus, which fires on 45–72% of turns, the same correction would bite hard.
+
+**It is one number, and it is English.** Every prompt and every answer in the trial is English.
+An earlier design ran a second, French arm and reported `fr = 0.54` against `en = 0.83`; it was
+withdrawn because the French pairs that survived to be estimated from were exactly the ones where
+caveman had not drifted the session out of French — conditioning on an outcome the treatment
+itself causes — and because matching the prompt sets cut the apparent gap by more than half. The
+consequence is stated rather than hidden: a non-English closing turn is priced at an
+English-measured ratio, and nothing here has measured whether that is right.
+
+**Compression falls off with run length.** On the three long prompts — the ones that most resemble
+a real session — closing `R` was 0.95 (n=3). The headline is held down by the short prompts.
 
 **Arms are isolated by `CLAUDE_CONFIG_DIR`.** `--settings` merges rather than replaces and leaks
 the host's own hooks into the control arm; running bare kills the hooks the treatment arm needs.
 Each run's arm is then re-derived from the injections in its own transcript rather than trusted
 from the launcher, so a leak discards a pair instead of quietly biasing it.
 
-**Mid-run `R` is not a measurement.** Leave-one-prompt-out moved it from 0.56 to 1.76 — a range
+**Mid-run `R` is not a measurement.** Leave-one-prompt-out moved it from 0.31 to 1.42 — a range
 straddling 1.0, so the data cannot exclude caveman making mid-run turns _longer_. The cause is
 mechanical rather than statistical: headless agents barely narrate between tool calls, averaging
 2.0 (treated) and 3.6 (control) prose tokens against 71 in the real corpus. More headless budget
 will not fix it; the instrument does not reproduce the phenomenon. Measuring it needs interactive
 capture.
 
-`closing-tool` as a stratum does not exist: 0 of 18 pairs, 0.4% of the corpus. An earlier
+`closing-tool` as a stratum does not exist: 0 of 9 pairs, 0.4% of the corpus. An earlier
 estimate that it was 47.9% of turns was an artifact of `onlyTextBlocks`, which every thinking
 block makes false.
 
@@ -243,8 +253,8 @@ block makes false.
 `src/effects/caveman/sensitivity.ts`
 
 Totals are recomputed across 0.35 (the old assumption, kept so a reader can see how far the
-measurement moved the answer), the measured per-language floor and ceiling, and two corners that
-break the strata apart with mid-run at 0.12 and 1.20. The upper corner is above 1.0 deliberately:
+measurement moved the answer), the measured IQR floor and ceiling of 0.73 and 0.91, and two
+corners that break the strata apart with mid-run at the leave-one-out extremes of 0.31 and 1.42. The upper corner is above 1.0 deliberately:
 a band that stopped there would assert something leave-one-out could not support. If the sign
 flips anywhere inside the band, the headline is indeterminate — and on this corpus it does.
 
@@ -308,15 +318,17 @@ measured bound — but it has not been measured, and no headless instrument can 
 
 **Whether caveman moves thinking tokens.** Assumed not, and the assumption was tested rather than
 waved through. Transcripts store thinking blocks with empty text, so the only available estimator
-is a residual — billed output minus visible text minus tool arguments — which came out **negative**
-on 2 of 16 trial pairs and is therefore not an estimator at all. This matters more than its
-position in this list suggests: thinking is ~89% of billed output on this corpus, so if caveman
-does compress it, every figure here understates the saving by a large factor.
+is a residual — billed output minus visible text minus tool arguments — and nothing validates it.
+It stays positive across all nine English pairs, which is not evidence that it works: it went
+**negative** on pairs of the wider pilot, and an estimator that can return an impossible value is
+not made sound by a set where it happened not to. This matters more than its position in this
+list suggests: thinking is ~89% of billed output on this corpus, so if caveman does compress it,
+every figure here understates the saving by a large factor.
 
 **Whether the trial's instrument matches the corpus it prices.** It does not, and the gap is
-stated rather than closed. Every trial run was a fresh single-prompt headless session on one
-model with 9/9 English compliance; the corpus is interactive, multi-model, hundreds of turns
-long, and 45–72% compliant. Applying the first to the second is an extrapolation. At n=16 the
+stated rather than closed. Every trial run was a fresh single-prompt headless English session on
+one model with 9/9 compliance; the corpus is interactive, multi-model, multi-language, hundreds
+of turns long, and 45–72% compliant. Applying the first to the second is an extrapolation. At n=9 the
 trial's own end-to-end cost comparison is also underpowered — pairs where the treated arm was
 cheaper: 10 of 16, a sign test at p≈0.45 — so the trial establishes a ratio, not a verdict.
 

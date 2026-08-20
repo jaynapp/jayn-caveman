@@ -161,14 +161,16 @@ never ran caveman at all**, against 10.50 when the reminder is present.
 Now let's measure `R`, or how much shorter a turn gets when the mode does fire.
 
 We built paired trials: same prompt, both arms, same model, same pinned repository state, arms
-isolated so that nothing differs except caveman.
+isolated so that nothing differs except caveman. Every prompt and every answer is English, and
+the ratio below is an English number — we have not measured what caveman does to prose in any
+other language.
 
-36 headless runs, 18 pairs, one model, of which 9 English pairs were usable for `R`. The result:
+18 headless runs, 9 pairs, one model, English only. The result:
 
 | stratum | R        | range         | basis                                |
 | ------- | -------- | ------------- | ------------------------------------ |
 | closing | **0.83** | IQR 0.73–0.91 | n=9, blended 0.828 at 9/9 compliance |
-| mid-run | 0.56     | LOO 0.56–1.76 | **placeholder, not a measurement**   |
+| mid-run | 0.86     | LOO 0.31–1.42 | **placeholder, not a measurement**   |
 
 **Mid-run `R` is a placeholder and we label it as one everywhere.** Headless agents barely
 narrate between tool calls, averaging 2.0 prose tokens on the treated arm and 3.6 on the
