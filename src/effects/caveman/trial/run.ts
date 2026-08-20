@@ -142,7 +142,7 @@ async function headless(prompt: string, arm: Arm, root: string, sandbox: string,
   return result;
 }
 
-async function resetSandbox(sandbox: string): Promise<void> {
+export async function resetSandbox(sandbox: string): Promise<void> {
   await exec('git', ['reset', '--hard'], { cwd: sandbox });
   await exec('git', ['clean', '-fd'], { cwd: sandbox });
 }

@@ -7,26 +7,47 @@ export type Arm = (typeof ARMS)[number];
 
 const ACTIVATE_HOOK = join(homedir(), '.claude', 'hooks', 'caveman-activate.js');
 const TRACKER_HOOK = join(homedir(), '.claude', 'hooks', 'caveman-mode-tracker.js');
+const STATUSLINE = join(homedir(), '.claude', 'hooks', 'caveman-statusline.sh');
 const PLUGIN_ROOT = join(homedir(), '.claude', 'plugins');
 
 const KEEP_FOREVER = 99999;
+
+/**
+ * Held identical across both arms, so the arms differ by `hooks` and nothing else.
+ *
+ * `model` and `effortLevel` are pinned rather than inherited because a config dir accumulates
+ * whatever a session writes back into it, and the two arms drifted apart exactly that way once
+ * already — ON carrying an `effortLevel` the control arm did not, on the outcome being measured.
+ *
+ * `statusLine` is here for a subtler reason. The activator appends a "STATUSLINE SETUP NEEDED …
+ * proactively offer to set this up" block to its injection whenever $CLAUDE_CONFIG_DIR/settings.json
+ * declares none. That block lands inside the treated arm's injection only, and it is an instruction
+ * to write off-task prose — measured as caveman output, in an arm the control cannot match. Declaring
+ * a statusLine silences the branch and makes the ON injection byte-identical to the corpus's.
+ */
+const FIXED = {
+  cleanupPeriodDays: KEEP_FOREVER,
+  model: 'claude-opus-5',
+  effortLevel: 'high',
+  statusLine: { type: 'command', command: `bash "${STATUSLINE}"` },
+  enabledPlugins: {},
+} as const;
 
 export function armDir(root: string, arm: Arm): string {
   return join(root, 'arms', arm);
 }
 
 function settingsFor(arm: Arm, node: string): unknown {
-  if (arm === 'off') return { cleanupPeriodDays: KEEP_FOREVER, hooks: {}, enabledPlugins: {} };
+  if (arm === 'off') return { ...FIXED, hooks: {} };
   const hook = (script: string) => ({
     hooks: [{ type: 'command', command: `"${node}" "${script}"`, timeout: 5 }],
   });
   return {
-    cleanupPeriodDays: KEEP_FOREVER,
+    ...FIXED,
     hooks: {
       SessionStart: [hook(ACTIVATE_HOOK)],
       UserPromptSubmit: [hook(TRACKER_HOOK)],
     },
-    enabledPlugins: {},
   };
 }
 

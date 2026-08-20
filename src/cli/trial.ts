@@ -1,3 +1,4 @@
+import { spawn } from 'node:child_process';
 import { appendFile, readFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -10,7 +11,7 @@ import {
   type Thresholds,
 } from '../effects/caveman/compliance.js';
 import { readThresholdFile } from '../effects/caveman/thresholds.js';
-import { admissible, buildArms, leaksIn } from '../effects/caveman/trial/arms.js';
+import { admissible, armDir, buildArms, leaksIn, type Arm } from '../effects/caveman/trial/arms.js';
 import { PROMPTS, TIERS, type Tier, type TrialPrompt } from '../effects/caveman/trial/prompts.js';
 import {
   CELLS,
@@ -27,6 +28,7 @@ import {
   pairKey,
   planKey,
   planRuns,
+  resetSandbox,
   runTrial,
   TrialHalted,
   type RunRecord,
@@ -92,7 +94,7 @@ const USAGE = `jayn-caveman trial — paired A/B measuring caveman's compression
 
 Usage:
   jayn-caveman trial sheet     --root <dir> [--repeats <n>] [--tier <name>] [--prompts <a,b>]
-  jayn-caveman trial next      --root <dir> [--repeats <n>]
+  jayn-caveman trial next      --root <dir> [--sandbox <dir>] [--repeats <n>]
   jayn-caveman trial import    --root <dir> [--from <dir>] [--since <date>]
   jayn-caveman trial init      --root <dir>
   jayn-caveman trial plan      [--repeats <n>] [--tier <name>]
@@ -104,6 +106,8 @@ Usage:
                       (default: ~/.claude/projects)
   --since <date>      ignore sessions started before this, e.g. 2026-08-20
   --sandbox <dir>     the pinned worktree runs execute in (git worktree add … <sha>)
+                      on 'next', resets it and starts the session there itself, on the
+                      arm the ledger asks for — the prompt is passed, never pasted
   --model <id>        held fixed across both arms (default: ${DEFAULT_MODEL})
   --repeats <n>       pairs per prompt (default: ${DEFAULT_REPEATS})
   --tier <name>       restrict to one tier: ${TIERS.join(', ')}
@@ -228,11 +232,48 @@ async function sheet(
   console.log(`When a batch is done:  jayn-caveman trial import --root ${root}`);
 }
 
+/**
+ * Start the next cell where it has to be started: the pinned sandbox, on the arm the ledger asks
+ * for, with the prompt handed over as an argument rather than pasted.
+ *
+ * Every one of those was a way a run got lost by hand. A session started in the working tree
+ * instead of the sandbox measures a different repository; a tree still dirty from the run before
+ * measures a different one again; an arm picked from memory rather than from the ledger lands in
+ * the wrong half of the pair; and an edited prompt no longer matches the key `import` pairs on.
+ * None of them fail loudly — the transcript still imports, it just answers a different question.
+ */
+async function launch(
+  root: string,
+  sandbox: string,
+  arm: Arm,
+  prompt: string,
+  model: string,
+): Promise<void> {
+  await resetSandbox(sandbox);
+  const child = spawn('claude', ['--model', model, prompt], {
+    cwd: sandbox,
+    env: {
+      ...process.env,
+      CLAUDE_CONFIG_DIR: armDir(root, arm),
+      CAVEMAN_DEFAULT_MODE: arm === 'on' ? 'full' : 'off',
+    },
+    stdio: 'inherit',
+  });
+  const code = await new Promise<number>((resolve, reject) => {
+    child.on('error', reject);
+    child.on('close', (status) => resolve(status ?? 0));
+  });
+  console.log('');
+  if (code !== 0) console.log(`claude exited ${code} — the run may be unusable`);
+  console.log(`Record it:  jayn-caveman trial import --root ${root} --from ${join(root, 'arms')}`);
+}
+
 async function next(
   root: string,
   prompts: readonly TrialPrompt[],
   repeats: number,
   model: string,
+  sandbox?: string,
 ): Promise<void> {
   const cells = outstanding(prompts, repeats, model, await completedRuns(root));
   const cell = cells[0];
@@ -244,6 +285,11 @@ async function next(
   console.log('─'.repeat(78));
   console.log(cell.text);
   console.log('─'.repeat(78));
+  if (sandbox) {
+    console.log(`sandbox: ${sandbox}   config: ${armDir(root, cell.plan.arm)}`);
+    console.log('');
+    await launch(root, sandbox, cell.plan.arm, cell.text, model);
+  }
 }
 
 async function importRuns(root: string, from: string, since: Date | undefined, model: string): Promise<void> {
@@ -411,7 +457,7 @@ export const trialCommand: Command = {
     }
 
     if (action === 'next') {
-      await next(root, prompts, repeats, model);
+      await next(root, prompts, repeats, model, args.value('sandbox'));
       return;
     }
 
