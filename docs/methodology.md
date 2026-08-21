@@ -1,6 +1,7 @@
 # Methodology
 
-How each number in the [post](../README.md) was arrived at, and what it cannot support.
+How each number in the [post](blog-caveman.md) and the [README](../README.md) was arrived at, and
+what it cannot support.
 
 The code carries no comments. This document is where the reasoning lives instead: every choice
 below is one that changes an output, and each names the module that implements it.
@@ -191,9 +192,9 @@ contamination model the bin estimator corrects for, so the two are on one scale.
 `c` (the closing-turn gap) and `b` (the decay) transfer between people and carry cluster
 bootstrap intervals. **`a` does not transfer.** So the fit also ships the
 leave-one-contributor-out width of the whole estimate, and the report prints that band in the
-headline rather than behind a flag. On this corpus that width is 45.3% to 71.6%, and the
-contributor who moves it down most holds none of the caveman-live turns at all — they move the
-estimate entirely through the control.
+headline rather than behind a flag. On this corpus that width is 44.3% to 54.8% around a pooled
+47.3%, and the contributor who moves it down most holds none of the caveman-live turns at all —
+they move the estimate entirely through the control.
 
 Resolution order per turn, most specific first: this stratum's own measured bin, the pooled bin
 for that depth split by `c`, the nearest earlier bin, then the prior — never 1. Someone with
@@ -213,8 +214,8 @@ disagreement between a measured bin and the formula over the same turns.
 
 `src/effects/caveman/trial/`
 
-`R` is the one parameter here with an experiment behind it. 18 headless runs, 9 pairs,
-`claude-opus-5`, English only: two arms against identical prompts and an identical pinned
+`R` is the one parameter here with an experiment behind it. 90 real interactive coding sessions — 45 matched ON/OFF
+pairs across two operators, `claude-opus-5`, English only: two arms against identical prompts and an identical pinned
 repository state, differing only in caveman.
 
 | stratum      | R     | basis                                                        |
@@ -253,14 +254,15 @@ the host's own hooks into the control arm; running bare kills the hooks the trea
 Each run's arm is then re-derived from the injections in its own transcript rather than trusted
 from the launcher, so a leak discards a pair instead of quietly biasing it.
 
-**Mid-run `R` is not a measurement.** Leave-one-prompt-out moved it from 0.31 to 1.42 — a range
-straddling 1.0, so the data cannot exclude caveman making mid-run turns _longer_. The cause is
-mechanical rather than statistical: headless agents barely narrate between tool calls, averaging
-2.0 (treated) and 3.6 (control) prose tokens against 71 in the real corpus. More headless budget
-will not fix it; the instrument does not reproduce the phenomenon. Measuring it needs interactive
-capture.
+**Mid-run `R` is measured now, and it is wide.** The headless pilot could not reach it: headless
+agents barely narrate between tool calls, averaging 2.0 (treated) and 3.6 (control) prose tokens
+against 71 in the real corpus, and leave-one-prompt-out on that pilot spanned 0.31 to 1.42,
+straddling 1.0. More headless budget would not have fixed it — the instrument does not reproduce
+the phenomenon. The interactive round does: 0.383 token-mass over 961/2,512 prose tokens on
+254/325 turns, pair IQR 0.15–0.93. That IQR is still most of the interval below 1.0, so the
+stratum is measured rather than settled.
 
-`closing-tool` as a stratum does not exist: 0 of 9 pairs, 0.4% of the corpus. An earlier
+`closing-tool` as a stratum does not exist: 0 of 45 pairs, 0.4% of the corpus. An earlier
 estimate that it was 47.9% of turns was an artifact of `onlyTextBlocks`, which every thinking
 block makes false.
 
@@ -268,11 +270,25 @@ block makes false.
 
 `src/effects/caveman/sensitivity.ts`
 
-Totals are recomputed across 0.35 (the old assumption, kept so a reader can see how far the
-measurement moved the answer), the measured IQR floor and ceiling of 0.73 and 0.91, and two
-corners that break the strata apart with mid-run at the leave-one-out extremes of 0.31 and 1.42. The upper corner is above 1.0 deliberately:
-a band that stopped there would assert something leave-one-out could not support. If the sign
-flips anywhere inside the band, the headline is indeterminate — and on this corpus it does.
+Totals are recomputed across four scenarios, and every one of them carries two ratios, because
+the strata are far apart and collapsing them into one number is the error the band exists to
+expose:
+
+| scenario                  | closing | mid-run |
+| ------------------------- | ------- | ------- |
+| caveman's advertised 0.35 | 0.35    | 0.35    |
+| lower pair quartile       | 0.59    | 0.15    |
+| pooled interactive trial  | 0.689   | 0.383   |
+| upper pair quartile       | 0.77    | 0.93    |
+
+The 0.35 row is caveman's own published figure rather than a stale assumption of ours, kept so a
+reader can see how far measuring the thing moved the answer. It is charged to both strata, so it
+saves _more_ than either pair quartile: the quartiles leave closing turns at 0.59–0.77 where the
+trial found them, and closing turns carry 78% of the prose.
+
+On the sessions that actually ran caveman the whole band is positive — 0.4% to 1.7%, small
+everywhere. On the projection onto corpora that never ran it the sign flips inside the band and
+between corpora, and a headline whose sign is not settled is reported as indeterminate.
 
 ---
 
@@ -283,6 +299,13 @@ flips anywhere inside the band, the headline is indeterminate — and on this co
 caveman injects tokens: a ruleset block at session start, and a reminder per user prompt. Both
 are counted from the transcripts of sessions where it actually ran — 457 to 467 tokens once per
 session, 34 to 50 tokens per user turn.
+
+A corpus that never ran caveman has no profile of its own, and `median([])` is 0 — so the
+projection would price the ruleset and every reminder at nothing, and report a saving with the
+cost side missing. `SHIPPED_PROFILE` stands in with the midpoint of the two correctly configured
+installs, 462 tokens once and 42 per prompt, and the report labels the profile borrowed wherever
+it used one. That term decides the sign: charge nothing for injections and the same replay
+reports **+0.41%**; charge them and it reports **−0.01%**.
 
 The two streams are kept apart rather than summed. A block at prefix position 0 is re-read every
 turn; a per-prompt reminder arriving at turn 20 of 25 is re-read five times. A combined total
@@ -297,10 +320,11 @@ already in the transcripts and needs no separate term.
 An injection delivered more than once on the same turn is priced once. This is not a rounding
 decision.
 
-The machine one corpus came from registered each caveman hook twice — once in `settings.json`,
-once via the enabled plugin, both binding the same scripts to the same events — so 263 of 266
-injection-carrying turns paid for the same reminder twice: 96,316 injected tokens where 47,896
-were needed, 102 tokens per prompt where 51 were.
+Both machines this was run from registered each caveman hook twice — once in `settings.json`,
+once via the enabled plugin, both binding the same scripts to the same events — so the same
+reminder was delivered twice on 98.9% of injection-carrying turns, $2.71 in total. On the corpus
+where it mattered most that is 263 of 266 turns: 96,316 injected tokens where 47,896 were needed,
+102 tokens per prompt where 51 were.
 
 Charging that to caveman answers the wrong question. The report exists to decide whether to _run_
 the tool, and nobody chooses to run it misconfigured. It was decisive rather than cosmetic: the
@@ -328,15 +352,16 @@ Stated plainly, because the numbers above are otherwise easy to over-read.
 over-compression is a negative saving, and nothing measured offline can see it. Only a randomized
 trial can, and this project does not run one over real work.
 
-**Whether the mid-run ratio is right.** Closing turns have a measurement; mid-run turns have a
-placeholder whose leave-one-out range straddles 1.0. It is labelled, banded, and capped by a
-measured bound — but it has not been measured, and no headless instrument can measure it.
+**How wide the mid-run ratio is.** Both strata are measured in the interactive trial now, but the
+mid-run pair IQR runs 0.15 to 0.93 — most of the interval below 1.0. It is banded at both
+quartiles rather than reported as a point, and 961 prose tokens over 254/325 turns is a thin base
+for a stratum holding 22% of the prose.
 
 **Whether caveman moves thinking tokens.** Assumed not, and the assumption was tested rather than
 waved through. Transcripts store thinking blocks with empty text, so the only available estimator
 is a residual — billed output minus visible text minus tool arguments — and nothing validates it.
-It stays positive across all nine English pairs, which is not evidence that it works: it went
-**negative** on pairs of the wider pilot, and an estimator that can return an impossible value is
+It stays positive across the interactive pairs, which is not evidence that it works: it went
+**negative** on pairs of the earlier pilot, and an estimator that can return an impossible value is
 not made sound by a set where it happened not to. This matters more than its position in this
 list suggests: thinking is ~89% of billed output on this corpus, so if caveman does compress it,
 every figure here understates the saving by a large factor.

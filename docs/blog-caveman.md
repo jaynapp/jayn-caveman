@@ -13,7 +13,7 @@ So we measured it. And yes, it depends lol. Let's deep dive in the numbers.
 On most corpora caveman cannot save more than 3% of the bill.
 If it fired on every turn, it would save **+0.79%**.
 Taking into account how it actually fires as a session grows, it returns **−0.01%** aka nothing.
-Caveman injections cost more than it saves below 500 English prose tokens per prompt you send.
+Caveman costs more than it saves below 500 English prose tokens per prompt you send.
 
 <svg viewBox="0 0 640 260" role="img" aria-label="Prose is 4.1 to 7.0 percent of output tokens and 2.3 to 9.1 percent of the bill; caveman returns plus 0.79 percent if it always fired and minus 0.01 percent as it really fires" style="width:100%;height:auto;color:inherit">
   <g fill="currentColor" font-family="ui-sans-serif,system-ui,sans-serif" font-size="12">
@@ -43,7 +43,7 @@ First problem: caveman compresses model prose and nothing else. So first let's c
 Across the four corpora priced, prose is 4.1% to 7.0% of output tokens, and 0.4% to 1.1% of the bill counting only the turn that wrote it.
 
 But prose is not paid for once. It's cache-written or cache-read on every turn after that, so its real cost grows with how long your sessions run. Accounting for that raises the ceiling to 2.3% to 9.1% of the bill.
-The corpus topping the bill range just have sessions so long that the same tokens to be re-read hundreds of times, not more prose than the rest.
+The corpus topping that range does not write more prose than the rest: its sessions are simply long enough for the same tokens to be re-read hundreds of times.
 
 On most sessions, prose is less than 3% of the bill, hence even with perfect compression, caveman cannot save more than that.
 
@@ -92,12 +92,12 @@ p_fire = (observed − floor) / (1 − floor)
 
 Vanilla "terseness" spans 28 percentage points between model families, so we can't just say every model acts the same. Worse, caveman's deletion rules name English function words, and we measured them not firing on French prose at all.
 
-So everything below is restricted to **Opus 5 and English**: 2,313 turns, 2,257 of them scoreable, 1,070 with caveman live, across three corpora. One thing worth keeping mind: that's a small base to have a stable `p_fire` estimation.
+So everything below is restricted to **Opus 5 and English**: 2,313 turns, 2,257 of them scoreable, 1,070 with caveman live, across three corpora. One thing worth keeping in mind: that's a small base to have a stable `p_fire` estimation.
 
 ### Splitting turns by position, not by content
 
 We first split turns into "pure text" versus "carries a tool call" and got a clean result: pure-text compliance stayed flat across the session while tool-carrying turns collapsed.
-But we were missing something that this table over all the turns carying prose shows us:
+But we were missing something that this table over all the turns carrying prose shows us:
 
 ```
              last=0   last=1
@@ -141,7 +141,7 @@ Here are the measured `p_fire` values. Bins are half-open (`5–10` means turn 5
 | 40–80      | 42%           | 11%           |
 | 80+        | **41%**       | **13%**       |
 
-\* too thin to measure directly (only 24 ON turns in that bin); it takes the corpus's own pooled rate and only the position gap from the fitted curve.
+\* the bin holds 24 ON turns across both strata, and the closing slice of them is under the estimator's 8-turn minimum — so that cell takes the corpus's own pooled rate for the bin and only the position gap from the fitted curve.
 
 <svg viewBox="0 0 600 260" role="img" aria-label="p_fire decays with turn index: closing turns 78 to 41 percent, mid-run turns 37 to 13 percent" style="width:100%;height:auto;color:inherit">
   <g stroke="currentColor" opacity=".2" stroke-width="1">
@@ -238,7 +238,7 @@ Unfortunately, we're not in the ideal situation their benchmarks seem to assume.
 
 ### What it would do to people who never installed it
 
-These sessions never carried caveman's injections, so the projection adds them back at the cited rates :
+These sessions never carried caveman's injections, so the projection adds them back at the cited rates:
 
 | corpus   | bill         | if it always fired   | with `p_fire` wired in |
 | -------- | ------------ | -------------------- | ---------------------- |
@@ -248,7 +248,49 @@ These sessions never carried caveman's injections, so the projection adds them b
 | corpus D | $97.65       | +$0.77 · +0.78%      | **+$0.09 · +0.09%**    |
 | **all**  | **$5431.76** | **+$42.93 · +0.79%** | **−$0.41 · −0.01%**    |
 
-Four corpora, 504 English sessions. Two come out positive and two negative, and the pooled result is indistinguishable from zero.The whole point of this post is the difference between a tool that always fires and the same tool as it actually behaves.
+<svg viewBox="0 0 640 250" role="img" aria-label="Projected savings per corpus, priced twice: if caveman always fired every corpus gains between 0.63 and 2.01 percent; with p_fire wired in corpus B falls to minus 0.59 percent, corpus C to minus 0.06 percent, and the pooled result is minus 0.01 percent" style="width:100%;height:auto;color:inherit">
+  <line x1="250" y1="18" x2="250" y2="204" stroke="currentColor" stroke-width="1" opacity=".45"/>
+  <g fill="currentColor" font-family="ui-sans-serif,system-ui,sans-serif">
+    <g font-size="12">
+      <text x="0" y="42" opacity=".8">corpus A</text><text x="0" y="78" opacity=".8">corpus B</text>
+      <text x="0" y="114" opacity=".8">corpus C</text><text x="0" y="150" opacity=".8">corpus D</text>
+      <text x="0" y="186" font-weight="600">all</text>
+    </g>
+    <g font-size="10" opacity=".5">
+      <text x="64" y="42">$4,579</text><text x="64" y="78">$624</text><text x="64" y="114">$132</text>
+      <text x="64" y="150">$98</text><text x="64" y="186">$5,432</text>
+    </g>
+    <g opacity=".22">
+      <rect x="250" y="26" width="91" height="11"/><rect x="250" y="62" width="292" height="11"/>
+      <rect x="250" y="98" width="96" height="11"/><rect x="250" y="134" width="113" height="11"/>
+      <rect x="250" y="170" width="115" height="11"/>
+    </g>
+    <g opacity=".8">
+      <rect x="250" y="39" width="10" height="11"/><rect x="164" y="75" width="86" height="11"/>
+      <rect x="241" y="111" width="9" height="11"/><rect x="250" y="147" width="13" height="11"/>
+      <rect x="248" y="183" width="2" height="11"/>
+    </g>
+    <g font-size="11" opacity=".55">
+      <text x="347" y="35">+0.63%</text><text x="548" y="71">+2.01%</text><text x="352" y="107">+0.66%</text>
+      <text x="369" y="143">+0.78%</text><text x="371" y="179">+0.79%</text>
+    </g>
+    <g font-size="11" font-weight="600">
+      <text x="266" y="48">+$3.28 · +0.07%</text><text x="256" y="84">−$3.68 · −0.59%</text>
+      <text x="256" y="120">−$0.08 · −0.06%</text><text x="269" y="156">+$0.09 · +0.09%</text>
+      <text x="256" y="192">−$0.41 · −0.01%</text>
+    </g>
+    <g font-size="11" opacity=".5">
+      <text x="163" y="218">−0.5%</text><text x="243" y="218">0</text><text x="388" y="218">+1%</text><text x="533" y="218">+2%</text>
+    </g>
+    <rect x="250" y="232" width="14" height="9" opacity=".22"/>
+    <text x="270" y="241" font-size="11" opacity=".6">if it always fired</text>
+    <rect x="390" y="232" width="14" height="9" opacity=".8"/>
+    <text x="410" y="241" font-size="11" opacity=".6">with p_fire wired in</text>
+  </g>
+</svg>
+<!-- fig: The same four corpora, priced twice -->
+
+Four corpora, 504 English sessions. Two come out positive and two negative, and the pooled result is indistinguishable from zero. The whole point of this post is the difference between a tool that always fires and the same tool as it actually behaves.
 And it goes from +0.79% to nothing at all for caveman.
 
 Two caveats. Corpus A is 84% of that pooled bill, so read the rows rather than the total. And 1,269 sessions worth $48.96 were dropped for not being entirely English.

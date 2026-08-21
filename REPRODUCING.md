@@ -27,14 +27,14 @@ npm run cli -- compliance --root ~/corpora/alice,~/corpora/bob
 
 ## The commands
 
-| Command      | Regenerates                                                           |
-| ------------ | --------------------------------------------------------------------- |
-| `analyze`    | the headline (−0.026%), the sensitivity band, the prose-share ceiling |
-| `compliance` | the `p_fire` table, the arm balance, the leave-one-out spread         |
-| `corpora`    | the per-corpus money table                                            |
-| `breakeven`  | the English-prose-per-prompt table and the crossing                   |
-| `trial`      | `R`, the compression ratio — **this one spends real money**           |
-| `curves`     | refits `curves/` from `data/` — the CI gate on our own numbers        |
+| Command      | Regenerates                                                          |
+| ------------ | -------------------------------------------------------------------- |
+| `analyze`    | the headline (−0.01%), the sensitivity band, the prose-share ceiling |
+| `compliance` | the `p_fire` table, the arm balance, the leave-one-out spread        |
+| `corpora`    | the per-corpus money table                                           |
+| `breakeven`  | the English-prose-per-prompt table and the crossing                  |
+| `trial`      | `R`, the compression ratio — **this one spends real money**          |
+| `curves`     | refits `curves/` from `data/` — the CI gate on our own numbers       |
 
 ### `analyze` — the headline and the band
 
@@ -66,9 +66,9 @@ It also prints, unasked:
 
 - **arm balance** — the ON/OFF model mix, flagged when the arms differ by more than 20 points.
   Our corpus was 61 points apart on Opus 5, which is why the post restricts to one family.
-- **composition** — the leave-one-contributor-out spread. On our corpus that is 45.3% to 71.6%,
-  and the contributor who moves it down most holds none of the caveman-live turns. That width
-  _is_ the estimate, not a robustness check it passed.
+- **composition** — the leave-one-contributor-out spread. On our corpus that is 44.3% to 54.8%
+  around a pooled 47.3%, and the contributor who moves it down most holds none of the
+  caveman-live turns. That width _is_ the estimate, not a robustness check it passed.
 - **band definition** — what the answer would have been had cells banded on tokens instead of
   words. It records the cost of a choice the numbers cannot settle.
 
@@ -96,6 +96,11 @@ Sessions that already ran caveman are excluded and reported separately — they 
 injections, so replaying them reconstructs rather than projects. Sessions are restricted to
 English by default; `--mixed-languages` lifts that, and the command will then be measuring an
 instrument rather than the tool.
+
+A corpus that never ran caveman has no injection profile to measure either, so the replay borrows
+the shipped one — 462 tokens once per session, 42 per prompt — and the report says `borrowed`
+where it did. That term decides the sign: charge nothing for injections and the pooled projection
+reads +0.41% instead of −0.01%.
 
 The command flags it when one corpus holds more than half the pooled bill. Ours held 84%.
 
@@ -134,9 +139,10 @@ instead of a quiet bias.
 `trial run` is resumable: completed runs are keyed in a ledger and skipped. It halts rather than
 grinding on when the failure is fatal (no credit, bad key, blown quota).
 
-The mid-run stratum is **not** measurable this way and the command says so. Headless agents
+The mid-run stratum is **not** measurable headlessly and the command says so. Headless agents
 barely narrate between tool calls — 2.0 prose tokens on the treated arm against 71 in a real
-corpus — so its ratio is a placeholder everywhere it appears.
+corpus. The shipped mid-run ratio comes from the interactive round below instead: 0.383
+token-mass, pair IQR 0.15–0.93.
 
 ### `trial` by hand — the interactive round
 
@@ -217,7 +223,7 @@ attribution CC BY 4.0 asks a citer to honour; see [LICENSE-DATA](LICENSE-DATA).
 The commands print their own caveats and mean them. The short version:
 
 - Sensitivity is taken as 1, so every `p_fire` is a **lower** bound.
-- Mid-run `R` is a placeholder whose leave-one-out range straddles 1.0.
+- Mid-run `R` is measured, but its pair IQR runs 0.15 to 0.93 — most of the interval below 1.0.
 - Thinking tokens are assumed untouched, and that assumption is untested — they are ~89% of
   billed output, so if caveman does compress them every figure here understates it.
 - A pooled percentage describes the heaviest spender while appearing to describe everyone.

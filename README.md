@@ -99,7 +99,9 @@ so every `p_fire` here is a **lower bound**.
 | 40–80      | 42%           | 11%           |
 | 80+        | **41%**       | **13%**       |
 
-\* 24 ON turns — too thin to measure directly; takes the pooled rate and the position gap only.
+\* the bin holds 24 ON turns across both strata, and the closing slice of them is under the
+estimator's 8-turn minimum — so that cell takes this corpus's own pooled rate for the bin and
+only the position gap from the fitted curve.
 
 ```bash
 npm run cli -- compliance --root <dir>,<dir> --by-position --model claude-opus-5
@@ -162,7 +164,8 @@ a projection of the tool.
 
 ### 7. What it did, and what it would do
 
-**Measured**, on the 98 caveman-live sessions of 108 ($755.55 of bill): **saved $4.85, 0.6%**.
+**Measured**, on the 98 caveman-live sessions of 108 ($755.55 of bill): **saved $4.85, 0.6%**. The
+token-weighted fire rate over those turns is 51.0%.
 
 | scenario                                          | saved            |
 | ------------------------------------------------- | ---------------- |
