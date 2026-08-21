@@ -38,7 +38,7 @@ import {
 } from '../effects/caveman/observations.js';
 import { collectSamples } from '../effects/caveman/samples.js';
 import { bandDefinitionSweep, leaveOneCorpusOut, type Composition } from '../effects/caveman/sensitivity.js';
-import { readThresholdFile, thresholdPathFor, writeThresholdFile } from '../effects/caveman/thresholds.js';
+import { readThresholdFile, THRESHOLD_PATH, writeThresholdFile } from '../effects/caveman/thresholds.js';
 import { cliVersion } from '../version.js';
 import { calibrateLocally, groupByLabel, loadGrouped } from '../transcript/load.js';
 import type { Args, Command } from './args.js';
@@ -52,8 +52,11 @@ const SPEC = {
 const USAGE = `jayn-caveman compliance [fit] — how often caveman is actually in effect (p_fire)
 
 ${ROOT_HELP}
-  --thresholds <file> style thresholds to borrow (default: the shipped ones for that quantile)
-  --quantile <q>      vanilla quantile counting as terse (default: 0.25)
+  --thresholds <file> style thresholds to borrow (default: the shipped curve, fitted at 0.25)
+  --quantile <q>      vanilla quantile counting as terse (default: 0.25). Off the default this
+                      is a sensitivity sweep: cells, floors and prior are refitted from this
+                      corpus in-process, nothing is borrowed, nothing is written. It moves this
+                      report only — the headline in \`analyze\` is always read at 0.25.
   --model <family>    restrict BOTH arms to one model family, e.g. claude-opus-5
   --by-position       split each curve into closing and mid-run turns (what the replay uses)
 
@@ -345,8 +348,22 @@ async function recordCommand(args: Args): Promise<void> {
 }
 
 async function fitCommand(args: Args): Promise<void> {
-  const { all, groupOf } = await gather(targetsFrom(args));
   const quantileAt = quantileFrom(args);
+  const explicitThresholds = args.value('thresholds');
+
+  // curves/ holds exactly one shipped curve, fitted at TERSE_QUANTILE. A curve at any other
+  // quantile is a diagnostic, not an asset: `compliance --quantile <q>` refits one in-process,
+  // so there is nothing to write and nothing to keep in sync.
+  if (quantileAt !== TERSE_QUANTILE && explicitThresholds === undefined) {
+    throw new Error(
+      `fit writes the shipped curve, which is fitted at ${TERSE_QUANTILE}.\n` +
+        `To sweep the cutoff, just report at it — the curve is refitted in-process:\n` +
+        `  jayn-caveman compliance --quantile ${quantileAt}\n` +
+        'To write a curve at this quantile anyway, name the file: --thresholds <file>',
+    );
+  }
+
+  const { all, groupOf } = await gather(targetsFrom(args));
   const thresholds = fitThresholds(all, quantileAt);
   if (thresholds.cutoff.size === 0) throw new Error('No cell had enough vanilla turns to fit.');
 
@@ -365,7 +382,7 @@ async function fitCommand(args: Args): Promise<void> {
     floorsFrom(floors),
     args.value('model'),
   );
-  const path = args.value('thresholds') ?? thresholdPathFor(quantileAt, TERSE_QUANTILE);
+  const path = explicitThresholds ?? THRESHOLD_PATH;
   await writeThresholdFile(
     serialiseThresholds(thresholds, creditCorpora(vanillaByCorpus), floors, quantileAt, prior),
     path,
@@ -473,8 +490,13 @@ async function run(args: Args): Promise<void> {
   const family = args.value('model');
   const all = restrictToModel(everything, family);
   const quantileAt = quantileFrom(args);
-  const thresholdsPath = args.value('thresholds') ?? thresholdPathFor(quantileAt, TERSE_QUANTILE);
-  const file = await readThresholdFile(thresholdsPath);
+  const explicitThresholds = args.value('thresholds');
+
+  // Cells, floors and prior are all functions of the quantile, so the shipped curve — fitted at
+  // TERSE_QUANTILE — is unusable at any other one. A sweep refits all three from this corpus.
+  const sweeping = quantileAt !== TERSE_QUANTILE && explicitThresholds === undefined;
+  const thresholdsPath = explicitThresholds ?? THRESHOLD_PATH;
+  const file = sweeping ? null : await readThresholdFile(thresholdsPath);
 
   const incompatible =
     file === null
@@ -483,13 +505,17 @@ async function run(args: Args): Promise<void> {
         ? `fitted at quantile ${file.quantile}, not ${quantileAt}`
         : cellCompatibility(file).reason;
   const shipped = file !== null && incompatible === null ? deserialiseThresholds(file) : null;
-  const floors: Floors = file !== null && incompatible === null ? floorsFrom(file.floors) : new Map();
   if (incompatible !== null) {
     console.error(`note: ${thresholdsPath} is ${incompatible}. Nothing is borrowed from it.`);
     console.error('      Refit it with `jayn-caveman compliance fit`.');
   }
 
   const thresholds = mergeThresholds(fitThresholds(all, quantileAt), shipped);
+  const floors: Floors = sweeping
+    ? floorsFrom(fitFloors(all, thresholds))
+    : file !== null && incompatible === null
+      ? floorsFrom(file.floors)
+      : new Map();
   const onTurns = all.filter((s) => s.cavemanActive).length;
   const coverage = coverageOf(all, thresholds);
 
@@ -501,6 +527,10 @@ async function run(args: Args): Promise<void> {
     console.log(`  restricted from ${everything.length} turns; both arms, so the contrast is like-for-like`);
   }
   console.log(`  thresholds: ${renderOrigin(thresholds)}`);
+  if (sweeping) {
+    console.log(`  sweep at quantile ${quantileAt}: cells, floors and prior all refitted here,`);
+    console.log(`  nothing borrowed from the shipped ${TERSE_QUANTILE} curve.`);
+  }
   console.log(
     `  scored ${coverage.scored}, unscored ${coverage.unscored} ` +
       `(${coverage.noSentence} with no prose sentence, ${coverage.noThreshold} with no covering cell)`,
@@ -510,6 +540,15 @@ async function run(args: Args): Promise<void> {
       `  ${coverage.borrowedCutoffs} scored turn(s) judged against the cross-model roll-up, ` +
         'their own family having no cutoff',
     );
+  }
+  if (sweeping) {
+    console.log('');
+    console.log(
+      `! A sweep and the ${TERSE_QUANTILE} baseline do not score the same turns. The baseline borrows`,
+    );
+    console.log('  shipped cells this corpus cannot fit; a sweep has no curve at its quantile to borrow');
+    console.log('  from, so it scores only what it fits locally. Read the movement as a bound on the');
+    console.log('  cutoff choice, not a like-for-like delta — part of it is the narrower footprint.');
   }
   console.log('');
 
@@ -550,7 +589,16 @@ async function run(args: Args): Promise<void> {
 
   const fitCurve = (subset: readonly Sample[]) =>
     pFireByIndex(subset, mergeThresholds(fitThresholds(subset, quantileAt), shipped), floors);
-  const prior = file !== null && incompatible === null ? (file.pFire ?? null) : null;
+  const prior = sweeping
+    ? fitPrior(
+        rowsFromSamples(all, (sample) => groupOf.get(sample) ?? 'unknown'),
+        thresholds,
+        floors,
+        family,
+      )
+    : file !== null && incompatible === null
+      ? (file.pFire ?? null)
+      : null;
   for (const line of renderComposition(
     leaveOneCorpusOut(all, (sample) => groupOf.get(sample) ?? 'unknown', fitCurve, prior),
   )) {

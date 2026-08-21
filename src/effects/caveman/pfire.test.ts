@@ -1,7 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { ANY_LANGUAGE, INDEX_BINS, type Bin, type PFireCurve, type PFirePrior } from './compliance.js';
-import { isUsable, isUsablePrior, pFireAt, pFireWithSource } from './pfire.js';
+import {
+  ANY_LANGUAGE,
+  INDEX_BINS,
+  type Bin,
+  type PFireCurve,
+  type PFirePrior,
+  type Sample,
+} from './compliance.js';
+import { fitCurveAt, isUsable, isUsablePrior, pFireAt, pFireWithSource } from './pfire.js';
 
 function bin(pFire: number | null, index: number): Bin {
   const [from, to] = INDEX_BINS[index]!;
@@ -124,4 +131,28 @@ test('a prior with no levels cannot price anything and is not offered as one', (
   assert.equal(isUsablePrior({ ...PRIOR, level: {} }), false);
   assert.equal(isUsablePrior(null), false);
   assert.equal(isUsablePrior(PRIOR), true);
+});
+
+function turnSample(overrides: Partial<Sample> = {}): Sample {
+  return {
+    language: 'en',
+    words: 200,
+    meanSentenceLength: 16,
+    structureShare: 0,
+    tokens: 300,
+    index: 0,
+    lastOfRun: false,
+    model: 'claude-opus-5',
+    cavemanActive: false,
+    ...overrides,
+  };
+}
+
+// fitFloors and the quantile-invariance of the correction are covered in compliance.test.ts.
+// What is only true here is the wiring: a sweep must carry fitted floors, not an empty map.
+test('a sweep off the default quantile fits floors rather than going without', () => {
+  const turns = Array.from({ length: 400 }, (_, i) =>
+    turnSample({ meanSentenceLength: 5 + (40 * i) / 399, lastOfRun: i % 2 === 0 }),
+  );
+  assert.ok(fitCurveAt(turns, 0.5).floors.size > 0);
 });

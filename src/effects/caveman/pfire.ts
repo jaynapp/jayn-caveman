@@ -4,6 +4,7 @@ import {
   binOf,
   deserialiseThresholds,
   evaluatePrior,
+  fitFloors,
   fitThresholds,
   floorsFrom,
   INDEX_BINS,
@@ -12,13 +13,15 @@ import {
   pFireByIndex,
   TERSE_QUANTILE,
   cellCompatibility,
+  type Floors,
   type MergedThresholds,
   type PFireCurve,
   type PFirePrior,
   type Sample,
 } from './compliance.js';
+import { fitPrior, rowsFromSamples } from './prior.js';
 import { collectSamples } from './samples.js';
-import { readThresholdFile, thresholdPathFor } from './thresholds.js';
+import { readThresholdFile, THRESHOLD_PATH } from './thresholds.js';
 
 export interface PFireModel {
   curve: PFireCurve;
@@ -83,6 +86,38 @@ export interface PFireOptions {
   model?: string;
 }
 
+export interface FittedCurve {
+  curve: PFireCurve;
+  thresholds: MergedThresholds;
+  floors: Floors;
+  prior: PFirePrior | null;
+}
+
+function borrowedIn(curve: PFireCurve): number {
+  return [...curve.byPosition.closing, ...curve.byPosition.midRun].filter((bin) => bin.method === 'shifted')
+    .length;
+}
+
+/**
+ * Fit a whole p_fire model — cells, floors and prior — from these turns at this quantile.
+ *
+ * Every field of a curve file is a function of the quantile it was fitted at: a cutoff *is* the
+ * q-th percentile of vanilla sentence length, and a q-detector fires on vanilla turns q of the
+ * time by construction, so the floors move with it too. Nothing shipped at one quantile can be
+ * borrowed at another. A sweep therefore refits all three here rather than reading a file.
+ */
+export function fitCurveAt(
+  samples: readonly Sample[],
+  quantileAt: number,
+  model?: string,
+  groupOf: (sample: Sample) => string = () => 'local',
+): FittedCurve {
+  const thresholds = mergeThresholds(fitThresholds(samples, quantileAt), null);
+  const floors = floorsFrom(fitFloors(samples, thresholds));
+  const prior = fitPrior(rowsFromSamples(samples, groupOf), thresholds, floors, model ?? null);
+  return { curve: pFireByIndex(samples, thresholds, floors), thresholds, floors, prior };
+}
+
 export async function loadPFireModel(
   sessions: readonly SessionAnalysis[],
   counter: TokenCounter,
@@ -93,7 +128,22 @@ export async function loadPFireModel(
     model === undefined
       ? collected
       : collected.filter((sample) => modelFamily(sample.model) === modelFamily(model));
-  const path = registryPath ?? thresholdPathFor(quantileAt, TERSE_QUANTILE);
+  // The shipped curve is fitted at TERSE_QUANTILE. At any other quantile there is nothing on
+  // disk to borrow, so refit the whole model from these turns instead of silently dropping the
+  // floors and the prior along with the cells.
+  if (quantileAt !== TERSE_QUANTILE && registryPath === undefined) {
+    const fitted = fitCurveAt(samples, quantileAt, model);
+    return {
+      curve: fitted.curve,
+      thresholds: fitted.thresholds,
+      samples,
+      prior: isUsablePrior(fitted.prior) ? fitted.prior : null,
+      registryRejected: null,
+      borrowedCells: borrowedIn(fitted.curve),
+    };
+  }
+
+  const path = registryPath ?? THRESHOLD_PATH;
   const file = await readThresholdFile(path);
 
   const rejected =
@@ -117,8 +167,6 @@ export async function loadPFireModel(
     samples,
     prior: isUsablePrior(prior) ? prior : null,
     registryRejected: rejected,
-    borrowedCells: [...curve.byPosition.closing, ...curve.byPosition.midRun].filter(
-      (bin) => bin.method === 'shifted',
-    ).length,
+    borrowedCells: borrowedIn(curve),
   };
 }

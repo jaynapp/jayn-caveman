@@ -126,6 +126,16 @@ makes every figure a **lower** bound. Sweeping `--quantile` is the sensitivity c
 were the detector perfect the estimate would not move at all, so how far it moves is how loose
 the bound is. Measured, it plateaus from 0.25 upward on well-sampled bins and collapses below it.
 
+Every field of a curve is a function of the quantile it was fitted at — a cutoff _is_ the q-th
+percentile, and a q-detector fires on vanilla q of the time, so the floors move with it. Nothing
+fitted at 0.25 can be borrowed at 0.5. `compliance --quantile <q>` therefore refits cells, floors
+and prior in-process and writes nothing; `curves/` holds exactly one curve, the shipped 0.25.
+
+The sweep buys that at a cost it prints: the baseline borrows shipped cells the local corpus
+cannot fit, and a sweep has no curve at its quantile to borrow from, so the two do not score the
+same turns. The movement bounds the cutoff choice; part of it is the narrower cell footprint.
+The sweep moves this report only — the headline in `analyze` is always read at 0.25.
+
 ### Why model family is in the cell
 
 Vanilla terseness spans 28 points between model families, and the two arms are badly unbalanced
@@ -356,5 +366,5 @@ so a prediction should be compared against a measured fire rate, not against dol
 | `src/effects/caveman/sensitivity.ts` | the band and the leave-one-out spread              |
 | `src/effects/caveman/trial/`         | the paired A/B that measures `R`                   |
 | `src/cli/`                           | one file per command                               |
-| `curves/`                            | fitted thresholds, floors and prior                |
+| `curves/`                            | the one shipped curve: cutoffs, floors, prior      |
 | `data/caveman/`                      | the contributed observations they were fitted from |

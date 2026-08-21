@@ -76,7 +76,9 @@ Two subcommands:
 
 - `compliance fit` refits the thresholds in `curves/` straight from the transcripts under
   `--root`, skipping `data/` entirely. Use it when the transcripts are yours to read but not
-  yours to publish.
+  yours to publish. It only ever writes the one shipped curve, fitted at 0.25; `--quantile` off
+  that default is a sweep, not an asset, so `compliance --quantile <q>` refits cells, floors and
+  prior in-process and writes nothing.
 - `compliance record --contributor <handle> --consent` exports your own turns as a batch under
   `data/caveman/`. See [Data](#data) for exactly what that writes.
 

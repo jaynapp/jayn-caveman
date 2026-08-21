@@ -13,14 +13,6 @@ export function thresholdPathIn(curvesRoot: string): string {
   return join(curvesRoot, THRESHOLD_FILENAME);
 }
 
-export function thresholdPathFor(quantile: number, defaultQuantile: number): string {
-  if (quantile === defaultQuantile) return THRESHOLD_PATH;
-
-  const scaled = Number((quantile * 100).toFixed(6));
-  const label = Number.isInteger(scaled) ? String(scaled).padStart(2, '0') : String(scaled).replace('.', '_');
-  return join(CURVES, `caveman-style-q${label}.json`);
-}
-
 export async function readThresholdFile(path = THRESHOLD_PATH): Promise<ThresholdFile | null> {
   try {
     return JSON.parse(await readFile(path, 'utf8')) as ThresholdFile;
