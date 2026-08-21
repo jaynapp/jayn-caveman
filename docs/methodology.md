@@ -192,8 +192,8 @@ contamination model the bin estimator corrects for, so the two are on one scale.
 `c` (the closing-turn gap) and `b` (the decay) transfer between people and carry cluster
 bootstrap intervals. **`a` does not transfer.** So the fit also ships the
 leave-one-contributor-out width of the whole estimate, and the report prints that band in the
-headline rather than behind a flag. On this corpus that width is 44.3% to 54.8% around a pooled
-47.3%, and the contributor who moves it down most holds none of the caveman-live turns at all —
+headline rather than behind a flag. On this corpus that width is 44.0% to 54.9% around a pooled
+47.1%, and the contributor who moves it down most holds none of the caveman-live turns at all —
 they move the estimate entirely through the control.
 
 Resolution order per turn, most specific first: this stratum's own measured bin, the pooled bin
@@ -205,8 +205,9 @@ labels itself a projection.
 Two limits stay on the record. A language level resting on a single contributor means "the
 French level" and "that person's level" are the same number, and the fit records the contributor
 count that says so. And the logistic is a smooth approximation of a shape that is not smooth — a
-cliff after roughly turn 5, a plateau, a collapse past 80 — so each build records the largest
-disagreement between a measured bin and the formula over the same turns.
+high plateau over the first ten turns, a steady fall, then a floor past 80 that stops falling — so
+each build records the largest disagreement between a measured bin and the formula over the same
+turns.
 
 ---
 
@@ -305,7 +306,7 @@ projection would price the ruleset and every reminder at nothing, and report a s
 cost side missing. `SHIPPED_PROFILE` stands in with the midpoint of the two correctly configured
 installs, 462 tokens once and 42 per prompt, and the report labels the profile borrowed wherever
 it used one. That term decides the sign: charge nothing for injections and the same replay
-reports **+0.41%**; charge them and it reports **−0.01%**.
+reports **+0.42%**; charge them and it reports **−0.01%**.
 
 The two streams are kept apart rather than summed. A block at prefix position 0 is re-read every
 turn; a per-prompt reminder arriving at turn 20 of 25 is re-read five times. A combined total

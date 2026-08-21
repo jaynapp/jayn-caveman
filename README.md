@@ -20,7 +20,7 @@ If it fired on every turn it would save **+0.79%**. As it actually fires, it ret
 **−0.01%** — nothing. The reminder injections cost more than the compression saves below
 roughly **500 English prose tokens per prompt** you send.
 
-Where caveman genuinely ran, it did save: **$4.85 on $755.55, or 0.6%**. That is a measurement.
+Where caveman genuinely ran, it did save: **$4.84 on $755.53, or 0.6%**. That is a measurement.
 The −0.01% is a projection onto people who never installed it, and the two are different
 questions.
 
@@ -92,16 +92,14 @@ so every `p_fire` here is a **lower bound**.
 
 | turn index | closing turns | mid-run turns |
 | ---------- | ------------- | ------------- |
-| 0–5        | 78%\*         | 37%           |
-| 5–10       | 100%          | 38%           |
+| 0–10       | 93%           | 39%           |
 | 10–20      | 80%           | 37%           |
 | 20–40      | 66%           | 21%           |
 | 40–80      | 42%           | 11%           |
 | 80+        | **41%**       | **13%**       |
 
-\* the bin holds 24 ON turns across both strata, and the closing slice of them is under the
-estimator's 8-turn minimum — so that cell takes this corpus's own pooled rate for the bin and
-only the position gap from the fitted curve.
+Every cell above is measured directly. None of them is thin enough to need the position gap
+borrowed from the fitted curve.
 
 ```bash
 npm run cli -- compliance --root <dir>,<dir> --by-position --model claude-opus-5
@@ -159,20 +157,20 @@ so it borrows the midpoint, 462 and 42 tokens (`SHIPPED_PROFILE` in
 `src/transcript/injection.ts`).
 
 That borrowing is not a detail. Charge nothing for injections and the same replay reports
-**+0.41%**; charge them and it reports **−0.01%**. A projection that omits the tool's cost is not
+**+0.42%**; charge them and it reports **−0.01%**. A projection that omits the tool's cost is not
 a projection of the tool.
 
 ### 7. What it did, and what it would do
 
-**Measured**, on the 98 caveman-live sessions of 108 ($755.55 of bill): **saved $4.85, 0.6%**. The
-token-weighted fire rate over those turns is 51.0%.
+**Measured**, on the 98 caveman-live sessions of 108 ($755.53 of bill): **saved $4.84, 0.6%**. The
+token-weighted fire rate over those turns is 50.6%.
 
 | scenario                                          | saved            |
 | ------------------------------------------------- | ---------------- |
-| caveman's advertised 0.35, charged to both strata | $13.32 · 1.7%    |
-| lower pair quartile (closing 0.59 / mid-run 0.15) | $7.07 · 0.9%     |
-| **pooled interactive trial (0.689 / 0.383)**      | **$4.85 · 0.6%** |
-| upper pair quartile (closing 0.77 / mid-run 0.93) | $2.82 · 0.4%     |
+| caveman's advertised 0.35, charged to both strata | $12.81 · 1.7%    |
+| lower pair quartile (closing 0.59 / mid-run 0.15) | $7.05 · 0.9%     |
+| **pooled interactive trial (0.689 / 0.383)**      | **$4.84 · 0.6%** |
+| upper pair quartile (closing 0.77 / mid-run 0.93) | $2.78 · 0.4%     |
 
 Caveman's advertised 0.35 saves nearly three times the measurement — because it is charged to
 **both** strata, while the quartiles leave closing turns at 0.59–0.77 where the trial found them.
@@ -183,11 +181,11 @@ stratum that holds the money.
 
 | corpus   | bill         | if it always fired   | with `p_fire` wired in |
 | -------- | ------------ | -------------------- | ---------------------- |
-| corpus A | $4578.70     | +$28.85 · +0.63%     | **+$3.28 · +0.07%**    |
+| corpus A | $4578.70     | +$28.85 · +0.63%     | **+$3.34 · +0.07%**    |
 | corpus B | $623.58      | +$12.53 · +2.01%     | **−$3.68 · −0.59%**    |
 | corpus C | $131.84      | +$0.87 · +0.66%      | **−$0.08 · −0.06%**    |
 | corpus D | $97.65       | +$0.77 · +0.78%      | **+$0.09 · +0.09%**    |
-| **all**  | **$5431.76** | **+$42.93 · +0.79%** | **−$0.41 · −0.01%**    |
+| **all**  | **$5431.76** | **+$42.93 · +0.79%** | **−$0.34 · −0.01%**    |
 
 ```bash
 npm run cli -- corpora --root <dirA>,<dirB>,<dirC>,<dirD> --model claude-opus-5
@@ -207,14 +205,14 @@ answer. So it pays exactly when the answer is long enough to cover the reminder 
 
 | English prose per prompt | sessions | share of bill | share that gain | money-weighted |
 | ------------------------ | -------- | ------------- | --------------- | -------------- |
-| 0–200                    | 92       | 2.7%          | 0%              | −0.377%        |
-| 200–400                  | 123      | 30.6%         | 11%             | −0.279%        |
-| 400–600                  | 112      | 28.2%         | 40%             | **+0.008%**    |
-| 600–800                  | 71       | 16.1%         | 58%             | **+0.160%**    |
-| 800–1000                 | 44       | 7.9%          | 64%             | **+0.194%**    |
-| 1000–1500                | 38       | 10.8%         | 66%             | **+0.273%**    |
-| 1500–2500                | 18       | 2.8%          | 78%             | **+0.448%**    |
-| 2500+                    | 6        | 0.9%          | 100%            | **+0.259%**    |
+| 0–200                    | 92       | 2.7%          | 0%              | −0.376%        |
+| 200–400                  | 123      | 30.6%         | 11%             | −0.278%        |
+| 400–600                  | 112      | 28.2%         | 40%             | **+0.010%**    |
+| 600–800                  | 71       | 16.1%         | 58%             | **+0.162%**    |
+| 800–1000                 | 44       | 7.9%          | 64%             | **+0.196%**    |
+| 1000–1500                | 38       | 10.8%         | 66%             | **+0.275%**    |
+| 1500–2500                | 18       | 2.8%          | 78%             | **+0.451%**    |
+| 2500+                    | 6        | 0.9%          | 100%            | **+0.261%**    |
 
 ```bash
 npm run cli -- breakeven --root <dir>,<dir> --model claude-opus-5
@@ -265,7 +263,7 @@ Checks: `npm test` (123 tests), `npm run typecheck`, `npm run lint`, `npm run fo
 
 - **`p_fire` is not a compliance rate for any population.** It is a rate against a vanilla
   baseline, and the baseline is whoever contributed. Leaving one contributor out moves the pooled
-  rate from 47.3% to anywhere in 44.3%–54.8%, and the contributor moving it down most holds none
+  rate from 47.1% to anywhere in 44.0%–54.9%, and the contributor moving it down most holds none
   of the caveman-live turns — they are pure baseline. The _shape_ (position gap, decay) survived
   every subset we tested; the _level_ did not.
 - **Vanilla terseness spans 28 percentage points between model families.** Always pass `--model`.

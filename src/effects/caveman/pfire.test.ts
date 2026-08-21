@@ -57,41 +57,29 @@ const PRIOR: PFirePrior = {
 };
 
 test('a turn is priced from its own stratum first', () => {
-  const c = curve(
-    [0.9, 0.8, 0.7, 0.6, 0.5, 0.4],
-    [0.3, 0.2, 0.1, 0.1, 0.1, 0.1],
-    [0.6, 0.5, 0.4, 0.3, 0.2, 0.1],
-  );
+  const c = curve([0.9, 0.7, 0.6, 0.5, 0.4], [0.3, 0.1, 0.1, 0.1, 0.1], [0.6, 0.4, 0.3, 0.2, 0.1]);
   assert.equal(pFireAt(c, turn(0, true)), 0.9);
   assert.equal(pFireAt(c, turn(0, false)), 0.3);
   assert.equal(pFireAt(c, turn(12, true)), 0.7, 'index 12 is the 10-20 bin');
 });
 
 test('a hole falls back to the pooled row for the SAME bin before moving in index', () => {
-  const c = curve(
-    [0.9, null, 0.7, 0.6, 0.5, 0.4],
-    [0.3, 0.2, 0.1, 0.1, 0.1, 0.1],
-    [0.6, 0.5, 0.4, 0.3, 0.2, 0.1],
-  );
-  assert.equal(pFireAt(c, turn(7, true)), 0.5, 'the 5-10 pooled row, not the 0-5 closing row');
+  const c = curve([0.9, null, 0.7, 0.6, 0.5], [0.3, 0.2, 0.1, 0.1, 0.1], [0.6, 0.5, 0.4, 0.3, 0.2]);
+  assert.equal(pFireAt(c, turn(12, true)), 0.5, 'the 10-20 pooled row, not the 0-10 closing row');
 });
 
 test('with nothing at this depth it walks back through earlier bins, never forward', () => {
   const c = curve(
-    [0.9, null, null, null, null, null],
-    [0.3, null, null, null, null, null],
-    [0.6, null, null, null, null, 0.05],
+    [0.9, null, null, null, null],
+    [0.3, null, null, null, null],
+    [0.6, null, null, null, 0.05],
   );
   assert.equal(pFireAt(c, turn(50, true)), 0.9, 'the closest earlier measurement in the same stratum');
   assert.equal(pFireAt(c, turn(50, false)), 0.3);
 });
 
 test('a turn past the last bin edge is priced, not dropped', () => {
-  const c = curve(
-    [0.9, 0.8, 0.7, 0.6, 0.5, 0.4],
-    [0.3, 0.2, 0.1, 0.1, 0.1, 0.1],
-    [0.6, 0.5, 0.4, 0.3, 0.2, 0.1],
-  );
+  const c = curve([0.9, 0.7, 0.6, 0.5, 0.4], [0.3, 0.1, 0.1, 0.1, 0.1], [0.6, 0.4, 0.3, 0.2, 0.1]);
   assert.equal(pFireAt(c, turn(5000, true)), 0.4);
   assert.equal(pFireAt(c, turn(5000, false)), 0.1);
 });
@@ -104,7 +92,7 @@ test('an unusable curve with no prior says so, rather than answering 0 or 1 as i
     'total by contract, and visibly the fallback',
   );
 
-  const oneBin = curve(NONE, NONE, [null, 0.4, null, null, null, null]);
+  const oneBin = curve(NONE, NONE, [null, 0.4, null, null, null]);
   assert.equal(isUsable(oneBin), true, 'one measured bin anywhere is a usable curve');
 });
 
@@ -118,9 +106,9 @@ test('with nothing measured, the shipped prior prices the turn instead of assumi
 
 test('a local measurement outranks the prior wherever one exists', () => {
   const measured = curve(
-    [0.9, null, null, null, null, null],
-    [0.3, null, null, null, null, null],
-    [0.6, null, null, null, null, null],
+    [0.9, null, null, null, null],
+    [0.3, null, null, null, null],
+    [0.6, null, null, null, null],
   );
   assert.deepEqual(pFireWithSource(measured, turn(0, true), PRIOR), { p: 0.9, source: 'measured' });
 

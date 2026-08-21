@@ -66,8 +66,8 @@ It also prints, unasked:
 
 - **arm balance** — the ON/OFF model mix, flagged when the arms differ by more than 20 points.
   Our corpus was 61 points apart on Opus 5, which is why the post restricts to one family.
-- **composition** — the leave-one-contributor-out spread. On our corpus that is 44.3% to 54.8%
-  around a pooled 47.3%, and the contributor who moves it down most holds none of the
+- **composition** — the leave-one-contributor-out spread. On our corpus that is 44.0% to 54.9%
+  around a pooled 47.1%, and the contributor who moves it down most holds none of the
   caveman-live turns. That width _is_ the estimate, not a robustness check it passed.
 - **band definition** — what the answer would have been had cells banded on tokens instead of
   words. It records the cost of a choice the numbers cannot settle.
@@ -100,7 +100,7 @@ instrument rather than the tool.
 A corpus that never ran caveman has no injection profile to measure either, so the replay borrows
 the shipped one — 462 tokens once per session, 42 per prompt — and the report says `borrowed`
 where it did. That term decides the sign: charge nothing for injections and the pooled projection
-reads +0.41% instead of −0.01%.
+reads +0.42% instead of −0.01%.
 
 The command flags it when one corpus holds more than half the pooled bill. Ours held 84%.
 

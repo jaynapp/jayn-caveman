@@ -130,30 +130,29 @@ But we were missing something that this table over all the turns carrying prose 
 
 Three quarters of the prose you pay for sits in a single turn per run. We tested position-from-the-end as a continuous variable and substituting it for the binary flag was worse: the model flips into wrap-up mode on exactly one turn.
 
-Here are the measured `p_fire` values. Bins are half-open (`5–10` means turn 5 up to but not including turn 10).
+Here are the measured `p_fire` values. Bins are half-open (`10–20` means turn 10 up to but not including turn 20).
 
 | turn index | closing turns | mid-run turns |
 | ---------- | ------------- | ------------- |
-| 0–5        | 78%\*         | 37%           |
-| 5–10       | 100%          | 38%           |
+| 0–10       | 93%           | 39%           |
 | 10–20      | 80%           | 37%           |
 | 20–40      | 66%           | 21%           |
 | 40–80      | 42%           | 11%           |
 | 80+        | **41%**       | **13%**       |
 
-\* the bin holds 24 ON turns across both strata, and the closing slice of them is under the estimator's 8-turn minimum — so that cell takes the corpus's own pooled rate for the bin and only the position gap from the fitted curve.
+Every cell above is measured directly.
 
-<svg viewBox="0 0 600 260" role="img" aria-label="p_fire decays with turn index: closing turns 78 to 41 percent, mid-run turns 37 to 13 percent" style="width:100%;height:auto;color:inherit">
+<svg viewBox="0 0 600 260" role="img" aria-label="p_fire decays with turn index: closing turns 93 to 41 percent, mid-run turns 39 to 13 percent" style="width:100%;height:auto;color:inherit">
   <g stroke="currentColor" opacity=".2" stroke-width="1">
     <line x1="55" y1="40" x2="580" y2="40"/><line x1="55" y1="130" x2="580" y2="130"/><line x1="55" y1="220" x2="580" y2="220"/>
   </g>
   <g fill="currentColor" font-family="ui-sans-serif,system-ui,sans-serif" font-size="11" opacity=".6">
     <text x="20" y="44">100%</text><text x="28" y="134">50%</text><text x="36" y="224">0%</text>
-    <text x="45" y="242">0–5</text><text x="135" y="242">5–10</text><text x="228" y="242">10–20</text>
-    <text x="323" y="242">20–40</text><text x="418" y="242">40–80</text><text x="520" y="242">80+</text>
+    <text x="42" y="242">0–10</text><text x="161" y="242">10–20</text><text x="280" y="242">20–40</text>
+    <text x="399" y="242">40–80</text><text x="524" y="242">80+</text>
   </g>
-  <polyline fill="none" stroke="currentColor" stroke-width="2.5" points="60,79.6 155,40 250,76 345,101.2 440,144.4 535,146.2"/>
-  <polyline fill="none" stroke="currentColor" stroke-width="2.5" stroke-dasharray="5 4" opacity=".55" points="60,153.4 155,151.6 250,153.4 345,182.2 440,200.2 535,196.6"/>
+  <polyline fill="none" stroke="currentColor" stroke-width="2.5" points="60,52.6 179,76 298,101.2 417,144.4 536,146.2"/>
+  <polyline fill="none" stroke="currentColor" stroke-width="2.5" stroke-dasharray="5 4" opacity=".55" points="60,149.8 179,153.4 298,182.2 417,200.2 536,196.6"/>
   <g fill="currentColor" font-family="ui-sans-serif,system-ui,sans-serif" font-size="11">
     <text x="545" y="143" font-weight="600">closing</text>
     <text x="545" y="200" opacity=".55">mid-run</text>
@@ -211,15 +210,15 @@ This is also where caveman's own cost appears. Measured on the corpora that ran 
 
 ## What it actually did, and what it would do
 
-**Where caveman actually ran** — 98 caveman-live sessions out of 108, $755.55 of bill. It saved **$4.85, or 0.6%**.
-The token-weighted fire rate on those turns is 51.0%.
+**Where caveman actually ran** — 98 caveman-live sessions out of 108, $755.53 of bill. It saved **$4.84, or 0.6%**.
+The token-weighted fire rate on those turns is 50.6%.
 
 | scenario                                          | saved            |
 | ------------------------------------------------- | ---------------- |
-| caveman's advertised 0.35, charged to both strata | $13.32 · 1.7%    |
-| lower pair quartile (closing 0.59 / mid-run 0.15) | $7.07 · 0.9%     |
-| **pooled interactive trial (0.689 / 0.383)**      | **$4.85 · 0.6%** |
-| upper pair quartile (closing 0.77 / mid-run 0.93) | $2.82 · 0.4%     |
+| caveman's advertised 0.35, charged to both strata | $12.81 · 1.7%    |
+| lower pair quartile (closing 0.59 / mid-run 0.15) | $7.05 · 0.9%     |
+| **pooled interactive trial (0.689 / 0.383)**      | **$4.84 · 0.6%** |
+| upper pair quartile (closing 0.77 / mid-run 0.93) | $2.78 · 0.4%     |
 
 <svg viewBox="0 0 640 200" role="img" aria-label="Sensitivity band on the sessions that ran caveman: 0.4 to 1.7 percent saved, all positive" style="width:100%;height:auto;color:inherit">
   <line x1="300" y1="18" x2="300" y2="166" stroke="currentColor" stroke-width="1" opacity=".45"/>
@@ -242,11 +241,11 @@ These sessions never carried caveman's injections, so the projection adds them b
 
 | corpus   | bill         | if it always fired   | with `p_fire` wired in |
 | -------- | ------------ | -------------------- | ---------------------- |
-| corpus A | $4578.70     | +$28.85 · +0.63%     | **+$3.28 · +0.07%**    |
+| corpus A | $4578.70     | +$28.85 · +0.63%     | **+$3.34 · +0.07%**    |
 | corpus B | $623.58      | +$12.53 · +2.01%     | **−$3.68 · −0.59%**    |
 | corpus C | $131.84      | +$0.87 · +0.66%      | **−$0.08 · −0.06%**    |
 | corpus D | $97.65       | +$0.77 · +0.78%      | **+$0.09 · +0.09%**    |
-| **all**  | **$5431.76** | **+$42.93 · +0.79%** | **−$0.41 · −0.01%**    |
+| **all**  | **$5431.76** | **+$42.93 · +0.79%** | **−$0.34 · −0.01%**    |
 
 <svg viewBox="0 0 640 250" role="img" aria-label="Projected savings per corpus, priced twice: if caveman always fired every corpus gains between 0.63 and 2.01 percent; with p_fire wired in corpus B falls to minus 0.59 percent, corpus C to minus 0.06 percent, and the pooled result is minus 0.01 percent" style="width:100%;height:auto;color:inherit">
   <line x1="250" y1="18" x2="250" y2="204" stroke="currentColor" stroke-width="1" opacity=".45"/>
@@ -275,9 +274,9 @@ These sessions never carried caveman's injections, so the projection adds them b
       <text x="369" y="143">+0.78%</text><text x="371" y="179">+0.79%</text>
     </g>
     <g font-size="11" font-weight="600">
-      <text x="266" y="48">+$3.28 · +0.07%</text><text x="256" y="84">−$3.68 · −0.59%</text>
+      <text x="266" y="48">+$3.34 · +0.07%</text><text x="256" y="84">−$3.68 · −0.59%</text>
       <text x="256" y="120">−$0.08 · −0.06%</text><text x="269" y="156">+$0.09 · +0.09%</text>
-      <text x="256" y="192">−$0.41 · −0.01%</text>
+      <text x="256" y="192">−$0.34 · −0.01%</text>
     </g>
     <g font-size="11" opacity=".5">
       <text x="163" y="218">−0.5%</text><text x="243" y="218">0</text><text x="388" y="218">+1%</text><text x="533" y="218">+2%</text>
@@ -309,14 +308,14 @@ Its benefit is a fraction of the English prose in the answer. It pays exactly wh
 
 | English prose per prompt | sessions | share of bill | share that gain | money-weighted |
 | ------------------------ | -------- | ------------- | --------------- | -------------- |
-| 0–200                    | 92       | 2.7%          | 0%              | −0.377%        |
-| 200–400                  | 123      | 30.6%         | 11%             | −0.279%        |
-| 400–600                  | 112      | 28.2%         | 40%             | **+0.008%**    |
-| 600–800                  | 71       | 16.1%         | 58%             | **+0.160%**    |
-| 800–1000                 | 44       | 7.9%          | 64%             | **+0.194%**    |
-| 1000–1500                | 38       | 10.8%         | 66%             | **+0.273%**    |
-| 1500–2500                | 18       | 2.8%          | 78%             | **+0.448%**    |
-| 2500+                    | 6        | 0.9%          | 100%            | **+0.259%**    |
+| 0–200                    | 92       | 2.7%          | 0%              | −0.376%        |
+| 200–400                  | 123      | 30.6%         | 11%             | −0.278%        |
+| 400–600                  | 112      | 28.2%         | 40%             | **+0.010%**    |
+| 600–800                  | 71       | 16.1%         | 58%             | **+0.162%**    |
+| 800–1000                 | 44       | 7.9%          | 64%             | **+0.196%**    |
+| 1000–1500                | 38       | 10.8%         | 66%             | **+0.275%**    |
+| 1500–2500                | 18       | 2.8%          | 78%             | **+0.451%**    |
+| 2500+                    | 6        | 0.9%          | 100%            | **+0.261%**    |
 
 <svg viewBox="0 0 620 260" role="img" aria-label="Share of sessions where caveman gains money rises from zero to one hundred percent as English prose per prompt rises, crossing between 400 and 600" style="width:100%;height:auto;color:inherit">
   <g stroke="currentColor" opacity=".18" stroke-width="1">

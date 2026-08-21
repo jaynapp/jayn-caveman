@@ -249,7 +249,7 @@ export function armBalance(samples: readonly Sample[]): ArmBalance {
   return { rows, onTurns, offTurns, worst, imbalanced: comparable && worst > ARM_IMBALANCE };
 }
 
-export const CELL_VERSION = 3;
+export const CELL_VERSION = 4;
 
 export interface FloorEntry {
   bin: number;
@@ -371,6 +371,7 @@ export function cellCompatibility(file: ThresholdFile): { ok: boolean; reason: s
   const known: Record<number, string> = {
     1: 'fitted with token size-bands and index-only floors (cell version 1); this build bands on words',
     2: 'fitted with cutoffs pooled across model families (cell version 2); this build keys them on model',
+    3: 'fitted with turns 0-5 and 5-10 as separate index bins (cell version 3); this build merges them into 0-10, so its per-bin floors are keyed to edges that no longer exist',
   };
   return {
     ok: false,
@@ -586,8 +587,7 @@ export function shiftedPair(
 }
 
 export const INDEX_BINS: readonly (readonly [number, number])[] = [
-  [0, 5],
-  [5, 10],
+  [0, 10],
   [10, 20],
   [20, 40],
   [40, 80],

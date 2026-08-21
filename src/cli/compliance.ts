@@ -567,7 +567,7 @@ async function run(args: Args): Promise<void> {
     return;
   }
 
-  const header = ['0-5', '5-10', '10-20', '20-40', '40-80', '80+'].map((b) => b.padStart(6)).join('');
+  const header = ['0-10', '10-20', '20-40', '40-80', '80+'].map((b) => b.padStart(6)).join('');
   console.log(`  ${'corpus (language)'.padEnd(WIDTH)} ${'nON'.padStart(5)} |${header}`);
   console.log(`  ${'-'.repeat(72)}`);
 
