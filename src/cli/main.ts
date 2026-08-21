@@ -18,7 +18,7 @@ const COMMANDS: Command[] = [
 
 function topLevelUsage(): string {
   const lines = [
-    `jayn-caveman ${cliVersion()} — the measurement code behind "Caveman made us lose money"`,
+    `jayn-caveman ${cliVersion()} — the measurement code behind "Caveman really does compress model prose"`,
     '',
     'Usage: jayn-caveman <command> [options]',
     '',

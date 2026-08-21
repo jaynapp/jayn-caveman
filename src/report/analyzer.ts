@@ -170,9 +170,10 @@ export function renderAnalysis(
     ),
   );
 
-  lines.push('  the last two rows break the strata apart. R for mid-run turns has NO measurement');
-  lines.push('  behind it and closing turns carry ~77% of prose tokens, so the row with the low');
-  lines.push('  closing ratio is the one that moves the total.');
+  lines.push('  every row carries TWO ratios: closing and mid-run are both measured, and they are');
+  lines.push('  far apart. Closing turns carry ~78% of prose tokens, so the closing ratio is what');
+  lines.push("  moves the total — which is why caveman's advertised 0.35, charged to both strata,");
+  lines.push('  saves more than either pair quartile.');
   if (indeterminate) {
     lines.push('');
     lines.push(s.flag('  INDETERMINATE') + s.dim(': the sign flips inside the sensitivity band.'));
@@ -222,7 +223,10 @@ export function renderAnalysis(
   lines.push(
     s.dim(
       `  injection profile     one-time ${Math.round(profile.oneTimeTokens)} tok, ` +
-        `per-prompt ${Math.round(profile.perPromptTokens)} tok (from ${profile.sessions} sessions)`,
+        `per-prompt ${Math.round(profile.perPromptTokens)} tok ` +
+        (profile.borrowed
+          ? '(borrowed — no caveman sessions here to measure it from)'
+          : `(from ${profile.sessions} sessions)`),
     ),
   );
   const measured = report.pFire.curve.pooled.filter((bin) => bin.pFire !== null).length;
@@ -275,17 +279,16 @@ export function renderAnalysis(
   lines.push(s.gold('Assumptions'));
   for (const line of [
     `  - prose ratio ${effect.proseRatio} is ${effect.source}; all figures scale with it`,
-    '  - that ratio comes from 9 PAIRED runs, all ENGLISH, where the only difference',
-    '    between arms was caveman, proven per run from the transcript injections. It',
-    '    measures CLOSING turns. Every run was one headless prompt on one model with no',
-    '    repeat, and headless sessions never reach the part of the decay curve where',
-    '    compliance collapses — trial compliance was 9/9 against 45-72% on this corpus.',
+    '  - that ratio comes from 45 PAIRED runs, all ENGLISH, where the only difference',
+    '    between arms was caveman, proven per run from the transcript injections. They',
+    '    are 90 real interactive coding sessions across two operators, not headless',
+    '    one-shot prompts, so they reach the depth where compliance actually decays.',
     '    Non-English turns here are priced at that English ratio; nothing measured it',
-    '  - on the three LONG trial prompts, the ones most like a real session, closing R',
-    '    was 0.95. The headline is held down by short prompts and this corpus is not',
-    '  - mid-run R is a pilot-informed placeholder, NOT a measurement: leave-one-out on',
-    '    the pilot spanned 0.31 to 1.42, straddling 1.0, so expansion is not excluded.',
-    '    The underlying turns averaged 2-4 prose tokens — see the two corner rows above',
+    '  - mid-run R is MEASURED in the same trial, not a placeholder: 0.383 token-mass',
+    '    over 961/2512 prose tokens, pair IQR 0.15-0.93. The per-turn statistic is 0.490;',
+    '    the token-mass one is priced because bills are paid in tokens. Both include the',
+    '    silent turns — caveman wrote no prose on 206 of 254 mid-run turns, against 232',
+    '    of 325 in control, and silence is a treatment outcome rather than a turn to drop',
     '  - p_fire LEVEL is not a measured compliance rate for any population: leaving one',
     '    contributor out of the control moves it across the composition band above, and',
     '    the corpus that moves it most holds 0% of the caveman-live turns — it is the',
@@ -297,8 +300,8 @@ export function renderAnalysis(
     '  - thinking tokens assumed unaffected, and this one was TRIED, not waved through:',
     '    transcripts store thinking as empty text, so it can only be had as a residual of',
     '    billed output minus visible text and tool args, which nothing validates. It',
-    '    stays positive on all 9 English pairs and went negative on pairs of the wider',
-    '    pilot. Thinking is ~89% of billed output here, so if caveman does move it,',
+    '    stays positive across the interactive pairs but went negative on pairs of the',
+    '    earlier pilot. Thinking is ~89% of billed output here, so if caveman moves it,',
     '    everything above is understated by a lot. Nothing in reach measures it',
     '  - p/R inflation likely UNDER-estimates vanilla on turns where prose was suppressed',
   ]) {
@@ -319,7 +322,12 @@ export function renderAnalysis(
   }
   const off = totals.sessions - totals.sessionsWithTool;
   if (off > 0) {
-    lines.push(s.dim(`  - ${off} sessions lacked the tool; their injections are synthesised, not observed`));
+    lines.push(
+      s.dim(
+        `  - ${off} sessions lacked the tool; their injections are ` +
+          (report.profile.borrowed ? 'the shipped profile, borrowed' : "this corpus's own measured profile"),
+      ),
+    );
   }
 
   return lines.join('\n');

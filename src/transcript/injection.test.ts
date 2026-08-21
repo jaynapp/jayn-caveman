@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { measureInjectionProfile, redundantTokensOf } from './injection.js';
+import { measureInjectionProfile, redundantTokensOf, SHIPPED_PROFILE } from './injection.js';
 import type { SessionAnalysis, Turn } from './session.js';
 import type { TokenCounter } from './tokens.js';
 
@@ -55,4 +55,26 @@ test('the same reminder on many turns is not redundant', async () => {
 test('a clean session reports no redundancy at all', async () => {
   const s = session([turn({ oneTime: ['alpha'], perTurn: ['beta gamma'] })]);
   assert.deepEqual(await redundantTokensOf(s, counter), [0]);
+});
+
+test('a corpus that never ran caveman borrows the profile instead of pricing it at zero', async () => {
+  // `median([])` is 0, which priced the ruleset and every reminder at nothing and handed each
+  // never-installed corpus a saving with the cost side missing.
+  const off = {
+    file: 'f',
+    sessionId: 's',
+    cavemanActive: false,
+    turns: [turn({ prompts: 1 })],
+  } as unknown as SessionAnalysis;
+  const profile = await measureInjectionProfile([off], counter);
+  assert.equal(profile.borrowed, true);
+  assert.equal(profile.oneTimeTokens, SHIPPED_PROFILE.oneTimeTokens);
+  assert.ok(profile.perPromptTokens > 0, 'a borrowed profile that is still zero fixes nothing');
+});
+
+test('a corpus that did run caveman measures its own profile and does not borrow', async () => {
+  const s = session([turn({ oneTime: [REMINDER], perTurn: [REMINDER], prompts: 1 })]);
+  const profile = await measureInjectionProfile([s], counter);
+  assert.equal(profile.borrowed, false);
+  assert.equal(profile.sessions, 1);
 });

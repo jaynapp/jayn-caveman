@@ -6,7 +6,27 @@ export interface InjectionProfile {
 
   perPromptTokens: number;
   sessions: number;
+  /** True when nothing local measured this and SHIPPED_PROFILE stood in. */
+  borrowed: boolean;
 }
+
+/**
+ * What caveman costs to have switched on, for a corpus that never switched it on.
+ *
+ * The midpoint of the two corpora that ran a correctly configured install end to end:
+ * 457 tok one-time / 34 per prompt over 29 sessions, and 467 / 50 over 69.
+ *
+ * Without this, `median([])` returns 0 and a corpus with no caveman sessions prices the
+ * SessionStart ruleset and every per-prompt reminder at nothing — the projection then reports
+ * a saving with the cost side missing. On the four English corpora that error was the entire
+ * result: the tool looked like it paid for itself, and it does not.
+ */
+export const SHIPPED_PROFILE: InjectionProfile = {
+  oneTimeTokens: 462,
+  perPromptTokens: 42,
+  sessions: 0,
+  borrowed: true,
+};
 
 function median(values: number[]): number {
   if (values.length === 0) return 0;
@@ -41,10 +61,15 @@ export async function measureInjectionProfile(
     if (prompts > 0) perPrompt.push(sessionPerPrompt / prompts);
   }
 
+  // Nothing here ran caveman, so nothing here measured its cost. The counterfactual asks what
+  // these sessions would have cost WITH the tool, and the tool is not free.
+  if (active === 0) return { ...SHIPPED_PROFILE };
+
   return {
     oneTimeTokens: median(oneTime),
     perPromptTokens: median(perPrompt),
     sessions: active,
+    borrowed: false,
   };
 }
 

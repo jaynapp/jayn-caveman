@@ -114,8 +114,9 @@ crossing, a per-prompt reminder cannot pay for itself; well over, it might.
 
 ### `trial` — measuring R
 
-**This command spends money.** It launches headless Claude Code runs, two per pair. Ours was 18
-runs for 9 pairs, all English.
+**This command spends money.** It launches Claude Code runs, two per pair. The headless pilot was
+18 runs for 9 pairs; the interactive trial the shipped ratios come from is 90 runs for 45 pairs
+across two operators, all English. `trial analyze --root <a>,<b>` pools several ledgers.
 
 ```bash
 npm run cli -- trial init  --root <ledger dir>

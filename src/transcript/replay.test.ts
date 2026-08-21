@@ -34,7 +34,7 @@ function turn(overrides: Partial<Turn> = {}): Turn {
 }
 
 const PROSE_RATIO = 0.35;
-const NO_INJECTION: InjectionProfile = { oneTimeTokens: 0, perPromptTokens: 0, sessions: 0 };
+const NO_INJECTION: InjectionProfile = { oneTimeTokens: 0, perPromptTokens: 0, sessions: 0, borrowed: false };
 
 test('observedCost reconciles against pricing.ts for every turn', () => {
   const turns = [
@@ -194,7 +194,7 @@ test('short OFF session can be net-negative once injection is priced in', () => 
       turn({ index: 1, outputTokens: 10, cacheWrite5m: 500, cacheRead: 1000 }),
     ],
   };
-  const profile: InjectionProfile = { oneTimeTokens: 1000, perPromptTokens: 0, sessions: 1 };
+  const profile: InjectionProfile = { oneTimeTokens: 1000, perPromptTokens: 0, sessions: 1, borrowed: false };
   const result = replaySession(session, [10, 10], () => PROSE_RATIO, profile, [0, 0]);
   assert.ok(result.optimizedUSD > result.actualUSD, 'a 2-turn session cannot amortise the one-time block');
 });

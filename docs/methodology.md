@@ -217,19 +217,24 @@ disagreement between a measured bin and the formula over the same turns.
 `claude-opus-5`, English only: two arms against identical prompts and an identical pinned
 repository state, differing only in caveman.
 
-| stratum      | R    | basis                                          |
-| ------------ | ---- | ---------------------------------------------- |
-| closing      | 0.83 | n=9 English pairs, blended 0.828 at 9/9 firing |
-| mid-run      | 0.86 | **placeholder**                                |
-| closing-tool | —    | 0 of 9 pairs produced one                      |
+| stratum      | R     | basis                                                        |
+| ------------ | ----- | ------------------------------------------------------------ |
+| closing      | 0.689 | n=45 interactive English pairs, IQR 0.59–0.77                |
+| mid-run      | 0.383 | same trial, token-mass over 254/325 turns; per-turn is 0.490 |
+| closing-tool | —     | 0 of 45 pairs produced one                                   |
+
+Both strata are measured. An earlier headless pilot of 9 pairs reported closing 0.83 with mid-run
+a placeholder; the interactive trial replaced both. Re-derive with
+`jayn-caveman trial analyze --root <ledger>,<ledger>`.
 
 Four things about that table are load-bearing.
 
 **The stored value is deconvolved, and here that was free.** The replay computes `p·R + (1−p)`,
 so `R` must mean compression _given firing_. The trial measures the ratio over all treated turns,
 fired or not; handing that blended figure to a formula that blends again counts the non-firing
-turns twice. The pilot fired on 9 of 9 closing turns, so `p_trial` is 1 and 0.828 passes through
-unchanged. On a real corpus, which fires on 45–72% of turns, the same correction would bite hard.
+turns twice. The trial fires on essentially every closing turn, so `p_trial` is ~1 and the
+measured ratio passes through nearly unchanged. On a real corpus, which fires on 44–55% of turns,
+the same correction bites hard.
 
 **It is one number, and it is English.** Every prompt and every answer in the trial is English.
 An earlier design ran a second, French arm and reported `fr = 0.54` against `en = 0.83`; it was
@@ -239,8 +244,9 @@ itself causes — and because matching the prompt sets cut the apparent gap by m
 consequence is stated rather than hidden: a non-English closing turn is priced at an
 English-measured ratio, and nothing here has measured whether that is right.
 
-**Compression falls off with run length.** On the three long prompts — the ones that most resemble
-a real session — closing `R` was 0.95 (n=3). The headline is held down by the short prompts.
+**Silent turns are inside `R`, on purpose.** Caveman produced no prose at all on 206 of 254
+mid-run turns, against 232 of 325 in control. Silence is a treatment outcome, not a turn to drop,
+so both the token-mass and per-turn figures include it.
 
 **Arms are isolated by `CLAUDE_CONFIG_DIR`.** `--settings` merges rather than replaces and leaks
 the host's own hooks into the control arm; running bare kills the hooks the treatment arm needs.
@@ -335,12 +341,12 @@ not made sound by a set where it happened not to. This matters more than its pos
 list suggests: thinking is ~89% of billed output on this corpus, so if caveman does compress it,
 every figure here understates the saving by a large factor.
 
-**Whether the trial's instrument matches the corpus it prices.** It does not, and the gap is
-stated rather than closed. Every trial run was a fresh single-prompt headless English session on
-one model with 9/9 compliance; the corpus is interactive, multi-model, multi-language, hundreds
-of turns long, and 45–72% compliant. Applying the first to the second is an extrapolation. At n=9 the
-trial's own end-to-end cost comparison is also underpowered — pairs where the treated arm was
-cheaper: 10 of 16, a sign test at p≈0.45 — so the trial establishes a ratio, not a verdict.
+**Whether the trial's instrument matches the corpus it prices.** Closer than it was, and the
+remaining gap is stated rather than closed. The trial is 45 pairs of real interactive coding
+sessions across two operators, so it no longer measures a headless one-shot regime the corpus
+never enters. It is still one model and English only, against a corpus that is multi-model,
+multi-language and runs hundreds of turns deep. Applying the first to the second is an
+extrapolation, and the trial establishes a ratio rather than a verdict.
 
 **How much any of this generalises.** Any single pooled percentage describes the heaviest spender
 while appearing to describe everyone, which is why per-corpus rows are the result and the pooled
