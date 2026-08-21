@@ -133,14 +133,17 @@ export function estimateCell(pairs: readonly Pair[], cell: Cell): CellEstimate {
     const off = sum(pair.off, cell);
     onUnscorable += onCell.filter((turn) => !turn.scorable).length;
     offUnscorable += offCell.filter((turn) => !turn.scorable).length;
-    if (off === 0) {
-      dropped++;
-      continue;
-    }
+    // A control with no prose has no finite within-pair ratio, but it remains evidence about
+    // expected prose per turn. Keep both arms in the pooled estimate; omit only its ratio from
+    // the median and IQR below.
     onTokens += on;
     offTokens += off;
     onTurns += onCell.length;
     offTurns += offCell.length;
+    if (off === 0) {
+      dropped++;
+      continue;
+    }
     massRatios.push(on / off);
 
     perTurnRatios.push(onCell.length === 0 ? 0 : on / onCell.length / (off / offCell.length));

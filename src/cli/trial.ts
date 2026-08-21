@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+import { globSync } from 'node:fs';
 import { appendFile, readFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -12,18 +13,13 @@ import {
 } from '../effects/caveman/compliance.js';
 import { readThresholdFile } from '../effects/caveman/thresholds.js';
 import { admissible, armDir, buildArms, leaksIn, type Arm } from '../effects/caveman/trial/arms.js';
-import {
-  PROMPTS,
-  shard,
-  TIERS,
-  type Tier,
-  type TrialPrompt,
-} from '../effects/caveman/trial/prompts.js';
+import { PROMPTS, shard, TIERS, type Tier, type TrialPrompt } from '../effects/caveman/trial/prompts.js';
 import {
   CELLS,
   estimateCell,
   sensitivityByCell,
   trialTurns,
+  type Cell,
   type Pair,
   type TrialTurn,
 } from '../effects/caveman/trial/pair.js';
@@ -105,7 +101,7 @@ Usage:
   jayn-caveman trial init      --root <dir>
   jayn-caveman trial plan      [--repeats <n>] [--tier <name>]
   jayn-caveman trial run       --root <dir> --sandbox <dir> [--model <id>] [--repeats <n>]
-  jayn-caveman trial analyze   --root <dir>
+  jayn-caveman trial analyze   --root <dir[,dir...]>
 
   --root <dir>        where the arms, the ledger and the transcripts live
   --from <dir>        transcripts to import hand-run sessions from
@@ -155,12 +151,17 @@ async function readLedger(root: string): Promise<RunRecord[]> {
       foreign++;
       continue;
     }
-    records.push(record);
+    records.push({ ...record, transcript: transcriptUnder(root, record) });
   }
   if (foreign > 0) {
     console.log(`ledger: ${foreign} non-English runs from an older design skipped`);
   }
   return records;
+}
+
+function transcriptUnder(root: string, record: RunRecord): string {
+  const copies = globSync(join(root, 'arms', record.arm, 'projects', '*', `${record.sessionId}.jsonl`));
+  return copies.length === 1 ? copies[0]! : record.transcript;
 }
 
 async function proven(record: RunRecord): Promise<boolean> {
@@ -214,6 +215,23 @@ async function pairsFrom(records: readonly RunRecord[]) {
 
 function fixed(value: number, places = 3): string {
   return Number.isFinite(value) ? value.toFixed(places) : '—';
+}
+
+function proseSummary(
+  pairs: readonly Pair[],
+  arm: Arm,
+  cell: Cell,
+): {
+  turns: number;
+  empty: number;
+  tokens: number;
+} {
+  const turns = pairs.flatMap((pair) => pair[arm].filter((turn) => turn.cell === cell));
+  return {
+    turns: turns.length,
+    empty: turns.filter((turn) => turn.tokens === 0).length,
+    tokens: turns.reduce((total, turn) => total + turn.tokens, 0),
+  };
 }
 
 function flagger(thresholds: Thresholds | null) {
@@ -362,12 +380,24 @@ async function importRuns(
   console.log(`${report.records.length} recorded. Analyse with: jayn-caveman trial analyze --root ${root}`);
 }
 
-async function analyze(root: string): Promise<void> {
-  const records = await readLedger(root);
-  const { pairs, inadmissible, incomplete, relabelled, crossOperator } = await pairsFrom(records);
+async function analyze(roots: readonly string[]): Promise<void> {
+  // Pair within each ledger before pooling. promptId/model/repeat is intentionally only unique
+  // inside a participant's ledger, so flattening records first would overwrite valid pairs.
+  const reports = await Promise.all(
+    roots.map(async (root) => {
+      const records = await readLedger(root);
+      return { records, ...(await pairsFrom(records)) };
+    }),
+  );
+  const records = reports.flatMap((report) => report.records);
+  const pairs = reports.flatMap((report) => report.pairs);
+  const inadmissible = reports.reduce((total, report) => total + report.inadmissible, 0);
+  const incomplete = reports.reduce((total, report) => total + report.incomplete, 0);
+  const relabelled = reports.reduce((total, report) => total + report.relabelled, 0);
+  const crossOperator = reports.reduce((total, report) => total + report.crossOperator, 0);
 
   console.log(
-    `pairs: ${pairs.length} usable, ${inadmissible} dropped on arm proof, ${incomplete} half-recorded` +
+    `ledgers: ${roots.length}; pairs: ${pairs.length} usable, ${inadmissible} dropped on arm proof, ${incomplete} half-recorded` +
       (relabelled > 0 ? `, ${relabelled} re-judged against the ledger` : '') +
       (crossOperator > 0 ? `, ${crossOperator} dropped for straddling two operators` : ''),
   );
@@ -380,7 +410,7 @@ async function analyze(root: string): Promise<void> {
   console.log('R — prose ON ÷ OFF, within a pair. English only. The tool ships 0.83 closing.');
   console.log('Read the starred form: mass for closing cells, per-turn for mid-run.');
   console.log('');
-  console.log('cell            form      pooled  median  IQR             pairs  drop  ON/OFF tok  turns');
+  console.log('cell            form      pooled  median  IQR             ratios  0-OFF  ON/OFF tok  turns');
   for (const cell of CELLS) {
     const estimate = estimateCell(pairs, cell);
 
@@ -392,12 +422,31 @@ async function analyze(root: string): Promise<void> {
       console.log(
         `${(form === 'mass' ? cell : '').padEnd(14)}${star}${form.padEnd(8)}  ` +
           `${fixed(ratio.pooled).padStart(6)}  ${fixed(ratio.median).padStart(6)}  ${iqr.padEnd(14)}  ` +
-          `${String(estimate.pairs).padStart(5)}  ${String(estimate.dropped).padStart(4)}  ` +
+          `${String(estimate.pairs).padStart(6)}  ${String(estimate.dropped).padStart(5)}  ` +
           (form === 'mass'
             ? `${String(estimate.onTokens).padStart(5)}/${String(estimate.offTokens).padEnd(5)}  ${estimate.onTurns}/${estimate.offTurns}`
             : ''),
       );
     }
+  }
+  console.log('Pooled R includes every pair; 0-OFF pairs have no finite individual ratio, so only');
+  console.log('their median/IQR contribution is omitted.');
+  const onMidRun = proseSummary(pairs, 'on', 'mid-run');
+  const offMidRun = proseSummary(pairs, 'off', 'mid-run');
+  console.log('');
+  console.log('mid-run prose presence — zero-token turns are included in R; conditional means diagnose why.');
+  console.log('arm  empty/all  empty rate  all-turn mean  non-empty mean');
+  for (const [arm, summary] of [
+    ['ON', onMidRun],
+    ['OFF', offMidRun],
+  ] as const) {
+    const nonEmpty = summary.turns - summary.empty;
+    console.log(
+      `${arm.padEnd(3)}  ${String(summary.empty).padStart(5)}/${String(summary.turns).padEnd(3)}  ` +
+        `${fixed(summary.empty / summary.turns).padStart(10)}  ` +
+        `${fixed(summary.tokens / summary.turns).padStart(13)}  ` +
+        `${fixed(summary.tokens / nonEmpty).padStart(14)}`,
+    );
   }
   console.log('');
   console.log('mass silently multiplies two things: prose-per-turn (what R means) by turn count');
@@ -409,8 +458,8 @@ async function analyze(root: string): Promise<void> {
   console.log('dropping pairs whose counts diverged selects on a post-treatment variable and');
   console.log('biases what remains — which is exactly how the French arm died.');
   console.log('');
-  console.log('unscorable is ON/OFF turns under the ten-word floor. Those turns are IN the ratio');
-  console.log('above and OUT of the sensitivity below — dropping them is what broke the');
+  console.log('unscorable is ON/OFF turns under the ten-word floor. Including zero-token turns,');
+  console.log('they are IN the ratio above and OUT of the sensitivity below — dropping them broke the');
   console.log('observational estimate, and they concentrate in mid-run.');
 
   const file = await readThresholdFile();
@@ -507,14 +556,7 @@ export const trialCommand: Command = {
     }
 
     if (action === 'next') {
-      await next(
-        root,
-        prompts,
-        repeats,
-        model,
-        args.value('sandbox'),
-        args.value('permission-mode'),
-      );
+      await next(root, prompts, repeats, model, args.value('sandbox'), args.value('permission-mode'));
       return;
     }
 
@@ -522,13 +564,7 @@ export const trialCommand: Command = {
       const raw = args.value('since');
       const since = raw ? new Date(raw) : undefined;
       if (since && Number.isNaN(since.getTime())) throw new Error(`--since is not a date: "${raw}"`);
-      await importRuns(
-        root,
-        args.value('from') ?? DEFAULT_TRANSCRIPTS,
-        since,
-        model,
-        args.value('operator'),
-      );
+      await importRuns(root, args.value('from') ?? DEFAULT_TRANSCRIPTS, since, model, args.value('operator'));
       return;
     }
 
@@ -584,7 +620,12 @@ export const trialCommand: Command = {
     }
 
     if (action === 'analyze') {
-      await analyze(root);
+      await analyze(
+        root
+          .split(',')
+          .map((part) => part.trim())
+          .filter(Boolean),
+      );
       return;
     }
 
