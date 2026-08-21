@@ -112,7 +112,7 @@ npm run cli -- breakeven --root <dir1>,<dir2>
 
 Buckets every session by prose tokens written per prompt sent, and reports share of bill, share
 of sessions that gain, and the money-weighted result per bucket. Default edges are the post's;
-`--buckets` takes your own.
+`--buckets` takes your own!
 
 This is the one output worth running on yourself before installing anything. Well under the
 crossing, a per-prompt reminder cannot pay for itself; well over, it might.
